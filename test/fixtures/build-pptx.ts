@@ -24,6 +24,8 @@ export type FixtureShape =
       crop?: { l?: number; t?: number; r?: number; b?: number };
       svgMedia?: string;
       external?: string;
+      /** Wraps the picture in `mc:AlternateContent` (Fallback) with a decoy Choice. */
+      alternateContent?: boolean;
     }
   | { kind: 'chart'; xfrm: Rect; chartMedia?: string }
   | { kind: 'table'; xfrm: Rect }
@@ -36,6 +38,8 @@ export type FixtureShape =
     };
 
 export interface FixtureSlide {
+  /** Writes `showMasterSp="0"` when false. */
+  showMasterSp?: boolean;
   /** Zero-based index into `FixtureDeck.layouts` (default 0). */
   layout?: number;
   hidden?: boolean;
@@ -44,6 +48,8 @@ export interface FixtureSlide {
 }
 
 export interface FixtureLayout {
+  /** Writes `showMasterSp="0"` when false. */
+  showMasterSp?: boolean;
   placeholders: { type?: string; idx?: number; xfrm: Rect }[];
   logoMedia?: string;
   /** SVG original of the logo; `logoMedia` becomes its PNG fallback. */
@@ -58,6 +64,10 @@ export interface FixtureDeck {
   slides: FixtureSlide[];
   media?: Record<string, Uint8Array>;
   extraEntries?: Record<string, Uint8Array>;
+  /** Archive entries to drop after building (e.g. a slide part). */
+  omitEntries?: string[];
+  /** Media shown as a picture on the slide master. */
+  masterLogoMedia?: string;
   /** Writes slide part files numbered in reverse relative to `p:sldIdLst`. */
   reverseFileOrder?: boolean;
 }
@@ -67,6 +77,7 @@ const NS_A = 'http://schemas.openxmlformats.org/drawingml/2006/main';
 const NS_R =
   'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const NS_C = 'http://schemas.openxmlformats.org/drawingml/2006/chart';
+const NS_MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
 const NS_ASVG = 'http://schemas.microsoft.com/office/drawing/2016/SVG/main';
 const NS_PKG_REL =
   'http://schemas.openxmlformats.org/package/2006/relationships';
@@ -189,7 +200,27 @@ function blipXml(
   );
 }
 
+function wrapAlternate(inner: string): string {
+  const decoy =
+    '<p:sp><p:nvSpPr><p:cNvPr id="900" name="Choice"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>' +
+    '<p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="10" cy="10"/></a:xfrm></p:spPr>' +
+    '<p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>choice</a:t></a:r></a:p></p:txBody></p:sp>';
+  return (
+    `<mc:AlternateContent xmlns:mc="${NS_MC}"><mc:Choice Requires="x">${decoy}</mc:Choice>` +
+    `<mc:Fallback>${inner}</mc:Fallback></mc:AlternateContent>`
+  );
+}
+
 function pictureXml(
+  id: number,
+  rels: Rels,
+  shape: Extract<FixtureShape, { kind: 'picture' }>,
+): string {
+  const xml = barePictureXml(id, rels, shape);
+  return shape.alternateContent === true ? wrapAlternate(xml) : xml;
+}
+
+function barePictureXml(
   id: number,
   rels: Rels,
   shape: Extract<FixtureShape, { kind: 'picture' }>,
@@ -323,8 +354,13 @@ function backgroundXml(bg: FixtureSlide['background'], rels: Rels): string {
   return `<p:bg><p:bgPr><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>`;
 }
 
+function showMasterAttr(value: boolean | undefined): string {
+  return value === false ? ' showMasterSp="0"' : '';
+}
+
 function slideXml(slide: FixtureSlide, rels: Rels, charts: Charts): string {
-  const show = slide.hidden ? ' show="0"' : '';
+  const show =
+    (slide.hidden ? ' show="0"' : '') + showMasterAttr(slide.showMasterSp);
   const bg = backgroundXml(slide.background, rels);
   const shapes = slide.shapes
     .map((s, i) => shapeXml(i + 2, s, rels, charts))
@@ -372,12 +408,12 @@ function layoutXml(layout: FixtureLayout, rels: Rels): string {
   const logo = logoXml(layout.placeholders.length + 2, rels, layout);
   const bg = backgroundXml(layout.background, rels);
   return (
-    `${XML_DECL}<p:sldLayout ${ROOT_NS} type="cust" preserve="1"><p:cSld name="Layout">${bg}<p:spTree>${SP_TREE_HEAD}${phs}${logo}</p:spTree></p:cSld>` +
+    `${XML_DECL}<p:sldLayout ${ROOT_NS} type="cust" preserve="1"${showMasterAttr(layout.showMasterSp)}><p:cSld name="Layout">${bg}<p:spTree>${SP_TREE_HEAD}${phs}${logo}</p:spTree></p:cSld>` +
     '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>'
   );
 }
 
-function masterXml(layoutCount: number): string {
+function masterXml(layoutCount: number, logo: string): string {
   const ids = Array.from({ length: layoutCount }, (_, i) => {
     return `<p:sldLayoutId id="${2147483649 + i}" r:id="rId${i + 1}"/>`;
   }).join('');
@@ -385,7 +421,7 @@ function masterXml(layoutCount: number): string {
   const bg =
     '<p:bg><p:bgPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>';
   return (
-    `${XML_DECL}<p:sldMaster ${ROOT_NS}><p:cSld>${bg}<p:spTree>${SP_TREE_HEAD}${title}</p:spTree></p:cSld>` +
+    `${XML_DECL}<p:sldMaster ${ROOT_NS}><p:cSld>${bg}<p:spTree>${SP_TREE_HEAD}${title}${logo}</p:spTree></p:cSld>` +
     `${CLR_MAP}<p:sldLayoutIdLst>${ids}</p:sldLayoutIdLst>` +
     '<p:txStyles><p:titleStyle/><p:bodyStyle/><p:otherStyle/></p:txStyles></p:sldMaster>'
   );
@@ -480,14 +516,28 @@ function layoutEntries(layouts: FixtureLayout[]): Record<string, Uint8Array> {
   return out;
 }
 
-function masterEntries(layoutCount: number): Record<string, Uint8Array> {
+function masterLogoXml(rels: Rels, media: string): string {
+  const rId = rels.add('image', `../media/${media}`);
+  return (
+    '<p:pic><p:nvPicPr><p:cNvPr id="90" name="Master logo"/><p:cNvPicPr/><p:nvPr userDrawn="1"/></p:nvPicPr>' +
+    `<p:blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>` +
+    `<p:spPr>${xfrmXml({ x: 0, y: 0, cx: 457200, cy: 457200 })}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`
+  );
+}
+
+function masterEntries(
+  layoutCount: number,
+  logoMedia?: string,
+): Record<string, Uint8Array> {
   const rels = new Rels();
   for (let i = 1; i <= layoutCount; i += 1) {
     rels.add('slideLayout', `../slideLayouts/slideLayout${i}.xml`);
   }
   rels.add('theme', '../theme/theme1.xml');
+  const logo =
+    typeof logoMedia === 'undefined' ? '' : masterLogoXml(rels, logoMedia);
   return {
-    'ppt/slideMasters/slideMaster1.xml': strToU8(masterXml(layoutCount)),
+    'ppt/slideMasters/slideMaster1.xml': strToU8(masterXml(layoutCount, logo)),
     'ppt/slideMasters/_rels/slideMaster1.xml.rels': strToU8(rels.toXml()),
   };
 }
@@ -571,13 +621,16 @@ export function buildPptx(spec: FixtureDeck): Uint8Array {
       ).toXml(),
     ),
     'ppt/theme/theme1.xml': strToU8(themeXml()),
-    ...masterEntries(layouts.length),
+    ...masterEntries(layouts.length, spec.masterLogoMedia),
     ...layoutEntries(layouts),
     ...slides,
     ...Object.fromEntries(parts),
     ...mediaEntries(spec.media ?? {}),
     ...spec.extraEntries,
   };
+  (spec.omitEntries ?? []).forEach((name) => {
+    delete files[name];
+  });
   return zipSync(files);
 }
 

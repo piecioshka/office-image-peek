@@ -44,6 +44,10 @@ export interface Slide {
   index: number;
   partPath: string;
   hidden: boolean;
+  /** False when `showMasterSp="0"` on the slide hides layout and master shapes. */
+  showLayoutShapes: boolean;
+  /** False when the slide or its layout hides master shapes. */
+  showMasterShapes: boolean;
   background: Background;
   shapes: Shape[];
   layoutPath: string | null;

@@ -1,4 +1,4 @@
-import { zipSync } from 'fflate';
+import { Zip, ZipPassThrough } from 'fflate';
 import type { ImageFormat } from './image-size';
 import type { ImageAsset } from './inventory';
 import type { Deck } from './open-deck';
@@ -63,17 +63,35 @@ function exportable(assets: ImageAsset[]): ImageAsset[] {
   return assets.filter((a) => !a.missing && a.archivePath !== null);
 }
 
+/** Streams stored entries into Blob parts, one asset in memory at a time. */
 export async function exportAsZip(
   deck: Deck,
   assets: ImageAsset[],
+  onProgress?: (done: number, total: number) => void,
 ): Promise<Blob> {
-  const files: Record<string, Uint8Array> = {};
-  for (const asset of exportable(assets)) {
-    files[asset.fileName] = await readAssetBytes(deck, asset, 'original');
-  }
-  return new Blob([zipSync(files, { level: 0 }).slice()], {
-    type: 'application/zip',
+  const list = exportable(assets);
+  const parts: Blob[] = [];
+  let failure: Error | null = null;
+  const zip = new Zip((error, chunk) => {
+    if (error) {
+      failure = error;
+    } else {
+      parts.push(new Blob([chunk]));
+    }
   });
+  let done = 0;
+  for (const asset of list) {
+    const entry = new ZipPassThrough(asset.fileName);
+    zip.add(entry);
+    entry.push(await readAssetBytes(deck, asset, 'original'), true);
+    done++;
+    onProgress?.(done, list.length);
+  }
+  zip.end();
+  if (failure !== null) {
+    throw failure;
+  }
+  return new Blob(parts, { type: 'application/zip' });
 }
 
 export async function exportToDirectory(

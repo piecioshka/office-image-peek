@@ -27,7 +27,7 @@ async function save(
     await exportToDirectory(deck, assets, dir, onProgress);
     return;
   }
-  const zip = await exportAsZip(deck, assets);
+  const zip = await exportAsZip(deck, assets, onProgress);
   downloadBlob(zip, `${deckSlug(deck.fileName)}-obrazki.zip`);
 }
 

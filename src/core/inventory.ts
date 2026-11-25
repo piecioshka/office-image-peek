@@ -253,7 +253,8 @@ async function collectLayoutUsage(
     const slides = pres.slides
       .filter(
         (s) =>
-          s.layoutPath === part || masters.get(s.layoutPath ?? '') === part,
+          (s.showLayoutShapes && s.layoutPath === part) ||
+          (s.showMasterShapes && masters.get(s.layoutPath ?? '') === part),
       )
       .map((s) => s.index);
     const info = analysis.infos.get(part);

@@ -263,7 +263,16 @@ function buildShape(el: Element, env: ShapeEnv, xf: Transform): Shape | null {
   return el.localName === 'sp' ? textShape(el, rect) : null;
 }
 
+/** Only the `mc:Fallback` branch is read, never `mc:Choice` as well. */
+function fallbackOf(el: Element): Element | undefined {
+  return child(el, NS.mc, 'Fallback');
+}
+
 function shapesFrom(el: Element, env: ShapeEnv, xf: Transform): Shape[] {
+  if (el.namespaceURI === NS.mc && el.localName === 'AlternateContent') {
+    const fallback = fallbackOf(el);
+    return fallback ? walkChildren(fallback, env, xf) : [];
+  }
   if (el.namespaceURI !== NS.p) {
     return [];
   }

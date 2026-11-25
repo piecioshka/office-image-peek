@@ -273,6 +273,25 @@ describe('assetsForSlide', () => {
   });
 });
 
+describe('assetsForSlide with hidden master shapes', () => {
+  it('leaves layout images off a slide with showMasterSp="0"', async () => {
+    const assets = await inventory({
+      media: only('a.png', 'c.png'),
+      layouts: [{ placeholders: [], logoMedia: 'c.png', logoXfrm: R }],
+      slides: [
+        { shapes: [pic('a.png')] },
+        { showMasterSp: false, shapes: [pic('a.png')] },
+      ],
+    });
+    expect(assetsForSlide(assets, 1).map((a) => a.id)).toContain(
+      'ppt/media/c.png',
+    );
+    expect(assetsForSlide(assets, 2).map((a) => a.id)).toEqual([
+      'ppt/media/a.png',
+    ]);
+  });
+});
+
 describe('deckSlug', () => {
   it('slugifies names', () => {
     expect(deckSlug('Q3 raport.final.pptx')).toBe('q3-raport-final');

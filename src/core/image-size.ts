@@ -19,7 +19,7 @@ export interface ImageInfo {
 
 type Dims = { width: number; height: number } | null;
 
-const MAX_SCAN = 65_536;
+const MAX_SVG_SCAN = 65_536;
 const JPEG_NON_SOF = new Set([0xc4, 0xc8, 0xcc]);
 const TAG_WIDTH = 256;
 const TAG_HEIGHT = 257;
@@ -224,18 +224,17 @@ function binaryInfo(bytes: Uint8Array): ImageInfo | null {
 }
 
 export function readImageSize(bytes: Uint8Array): ImageInfo {
-  const head = bytes.subarray(0, MAX_SCAN);
-  const binary = binaryInfo(head);
+  const binary = binaryInfo(bytes);
   if (binary !== null) {
     return binary;
   }
-  if (isEmf(head)) {
+  if (isEmf(bytes)) {
     return withDims('emf', null);
   }
-  if (startsWith(head, [0xd7, 0xcd, 0xc6, 0x9a])) {
+  if (startsWith(bytes, [0xd7, 0xcd, 0xc6, 0x9a])) {
     return withDims('wmf', null);
   }
-  const text = new TextDecoder().decode(head);
+  const text = new TextDecoder().decode(bytes.subarray(0, MAX_SVG_SCAN));
   return /<svg[\s>]/i.test(text)
     ? withDims('svg', svgSize(text))
     : withDims('unknown', null);

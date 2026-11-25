@@ -120,6 +120,35 @@ async function extraMediaOf(
   return Array.from(new Set(lists.flat()));
 }
 
+function emptySlide(partPath: string, index: number): Slide {
+  return {
+    index,
+    partPath,
+    hidden: false,
+    showLayoutShapes: true,
+    showMasterShapes: true,
+    background: { kind: 'none' },
+    shapes: [],
+    layoutPath: null,
+    extraMedia: [],
+  };
+}
+
+function showsMasterShapes(part: PartData | null): boolean {
+  return part?.doc.documentElement.getAttribute('showMasterSp') !== '0';
+}
+
+function visibleShapes(
+  ctx: ParseContext,
+  chain: { layout: PartData | null; master: PartData | null },
+  show: { layout: boolean; master: boolean },
+): Shape[] {
+  return [
+    ...(show.master ? inheritedPictures(ctx, chain.master, 'master') : []),
+    ...(show.layout ? inheritedPictures(ctx, chain.layout, 'layout') : []),
+  ];
+}
+
 export async function parseSlide(
   ctx: ParseContext,
   partPath: string,
@@ -127,23 +156,30 @@ export async function parseSlide(
 ): Promise<Slide> {
   const part = await loadPart(ctx, partPath);
   if (part === null) {
-    throw new Error(`Missing slide part ${partPath}`);
+    return emptySlide(partPath, index);
   }
   const layoutRel = firstRel(part, 'slideLayout');
   const layout = layoutRel ? await loadPart(ctx, layoutRel.target) : null;
   const masterRel = firstRel(layout, 'slideMaster');
   const master = masterRel ? await loadPart(ctx, masterRel.target) : null;
   const inherited = [placeholdersOf(ctx, layout), placeholdersOf(ctx, master)];
+  const showLayout = showsMasterShapes(part);
+  const showMaster = showLayout && showsMasterShapes(layout);
   return {
     index,
     partPath,
     hidden: part.doc.documentElement.getAttribute('show') === '0',
+    showLayoutShapes: showLayout,
+    showMasterShapes: showMaster,
     background: backgroundOf(part) ??
       backgroundOf(layout) ??
       backgroundOf(master) ?? { kind: 'none' },
     shapes: [
-      ...inheritedPictures(ctx, master, 'master'),
-      ...inheritedPictures(ctx, layout, 'layout'),
+      ...visibleShapes(
+        ctx,
+        { layout, master },
+        { layout: showLayout, master: showMaster },
+      ),
       ...parseShapes({ part, source: 'slide', inherited }),
     ],
     layoutPath: layoutRel ? layoutRel.target : null,

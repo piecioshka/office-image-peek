@@ -141,4 +141,21 @@ describe('readImageSize', () => {
       height: null,
     });
   });
+
+  it('reads JPEG dimensions behind more than 64 KB of metadata', () => {
+    const plain = tinyJpeg(321, 123);
+    const segment = new Uint8Array(35_002);
+    segment.set([0xff, 0xe1, 0x88, 0xb8]);
+    const jpeg = Uint8Array.from([
+      ...plain.subarray(0, 2),
+      ...segment,
+      ...segment,
+      ...plain.subarray(2),
+    ]);
+    expect(readImageSize(jpeg)).toEqual({
+      format: 'jpeg',
+      width: 321,
+      height: 123,
+    });
+  });
 });

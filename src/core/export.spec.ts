@@ -133,6 +133,19 @@ describe('export', () => {
     expect(firstCentralMethod(bytes)).toBe(0);
   });
 
+  it('zip export reports progress after each asset', async () => {
+    const d = await deck();
+    const progress: [number, number][] = [];
+    await exportAsZip(d, d.assets, (done, total) =>
+      progress.push([done, total]),
+    );
+    expect(progress).toEqual([
+      [1, 3],
+      [2, 3],
+      [3, 3],
+    ]);
+  });
+
   it('directory export writes every non-missing asset', async () => {
     const d = await deck();
     const { dir, files } = fakeDirectory();

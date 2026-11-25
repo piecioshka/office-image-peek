@@ -30,6 +30,8 @@ function makeDeck(shapes: Shape[]): { deck: Deck; slide: Slide } {
     index: 3,
     partPath: 'ppt/slides/slide3.xml',
     hidden: false,
+    showLayoutShapes: true,
+    showMasterShapes: true,
     background: { kind: 'color', color: '#FFFFFF' },
     shapes,
     layoutPath: null,

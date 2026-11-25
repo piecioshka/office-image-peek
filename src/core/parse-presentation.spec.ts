@@ -296,3 +296,80 @@ describe('parsePresentation', () => {
     await expect(parsePresentation(broken)).rejects.toBeInstanceOf(PptxError);
   });
 });
+
+describe('parsePresentation edge cases', () => {
+  it('unwraps mc:AlternateContent and parses only the Fallback', async () => {
+    const deck = await parse({
+      media: PNG,
+      slides: [
+        {
+          shapes: [
+            {
+              kind: 'picture',
+              media: 'a.png',
+              xfrm: R,
+              alternateContent: true,
+            },
+          ],
+        },
+      ],
+    });
+    const shapes = deck.slides[0]?.shapes ?? [];
+    expect(shapes).toHaveLength(1);
+    expect(shapes[0]).toMatchObject({
+      kind: 'picture',
+      mediaPath: 'ppt/media/a.png',
+    });
+  });
+
+  it('renders a slide whose part is missing as an empty slide', async () => {
+    const deck = await parse({
+      media: PNG,
+      omitEntries: ['ppt/slides/slide1.xml'],
+      slides: [
+        { shapes: [{ kind: 'text', text: ['gone'], xfrm: R }] },
+        { shapes: [{ kind: 'text', text: ['kept'], xfrm: R }] },
+      ],
+    });
+    expect(deck.slides).toHaveLength(2);
+    expect(deck.slides[0]).toMatchObject({
+      index: 1,
+      shapes: [],
+      background: { kind: 'none' },
+    });
+    expect(deck.slides[1]?.shapes[0]).toMatchObject({ kind: 'text' });
+  });
+
+  it('skips layout and master pictures when the slide hides master shapes', async () => {
+    const deck = await parse({
+      media: PNG,
+      masterLogoMedia: 'b.png',
+      layouts: [{ placeholders: [], logoMedia: 'a.png', logoXfrm: R }],
+      slides: [{ shapes: [] }, { showMasterSp: false, shapes: [] }],
+    });
+    expect(deck.slides[0]?.shapes.map((s) => s.kind)).toEqual([
+      'picture',
+      'picture',
+    ]);
+    expect(deck.slides[1]?.shapes).toEqual([]);
+  });
+
+  it('skips master pictures when the layout hides master shapes', async () => {
+    const deck = await parse({
+      media: PNG,
+      masterLogoMedia: 'b.png',
+      layouts: [
+        {
+          showMasterSp: false,
+          placeholders: [],
+          logoMedia: 'a.png',
+          logoXfrm: R,
+        },
+      ],
+      slides: [{ shapes: [] }],
+    });
+    const shapes = deck.slides[0]?.shapes ?? [];
+    expect(shapes).toHaveLength(1);
+    expect(shapes[0]).toMatchObject({ source: 'layout' });
+  });
+});
