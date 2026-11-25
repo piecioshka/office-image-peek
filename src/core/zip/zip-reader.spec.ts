@@ -133,6 +133,30 @@ describe('openZip', () => {
     expect(spy.fullReads()).toBe(0);
   });
 
+  it('reads a prefix of a deflated entry without reading all of it', async () => {
+    const data = new Uint8Array(1_000_000);
+    for (let at = 0; at < data.length; at += 65_536) {
+      crypto.getRandomValues(data.subarray(at, at + 65_536));
+    }
+    const spy = spyBlob(toBlob(zipSync({ 'd.bin': [data, { level: 6 }] })));
+    const archive = await openZip(spy.blob);
+    const compressed = archive.entries.get('d.bin')?.compressedSize ?? 0;
+    const prefix = await archive.readPrefix('d.bin', 1000);
+    expect(prefix).toEqual(data.subarray(0, 1000));
+    expect(spy.maxSliceBytes()).toBeLessThan(compressed / 2);
+  });
+
+  it('reads a prefix of a stored entry', async () => {
+    const data = randomBytes(300_000);
+    const archive = await openZip(
+      toBlob(zipSync({ 's.bin': [data, { level: 0 }] })),
+    );
+    expect(await archive.readPrefix('s.bin', 500)).toEqual(
+      data.subarray(0, 500),
+    );
+    expect((await archive.readPrefix('s.bin', 999_999)).length).toBe(300_000);
+  });
+
   it('handles ZIP64 end of central directory', async () => {
     const zip = buildZip64(zipSync({ 'a.txt': strToU8('hello') }));
     const archive = await openZip(toBlob(zip));

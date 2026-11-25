@@ -128,6 +128,9 @@ function tiffValue(view: DataView, at: number, little: boolean): number {
 }
 
 function tiffSize(bytes: Uint8Array): Dims {
+  if (bytes.length < 8) {
+    return null;
+  }
   const view = viewOf(bytes);
   const little = bytes[0] === 0x49;
   const ifd = view.getUint32(4, little);

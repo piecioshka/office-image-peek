@@ -15,6 +15,7 @@ import {
   uniqueName,
 } from './inventory';
 import { parsePresentation } from './parse-presentation';
+import { spyBlob } from '../../test/blob-spy';
 import { openZip } from './zip/zip-reader';
 
 const R = { x: 0, y: 0, cx: 100, cy: 100 };
@@ -198,6 +199,63 @@ describe('buildImageInventory', () => {
       'demo-slajd-001-01.png',
       'demo-slajd-100-01.png',
     ]);
+  });
+});
+
+describe('inventory edge cases', () => {
+  it('pairs svg and png fallback on a layout logo', async () => {
+    const svg = new TextEncoder().encode('<svg viewBox="0 0 8 4"></svg>');
+    const assets = await inventory({
+      media: { 'a.png': MEDIA['a.png'], 'a.svg': svg },
+      layouts: [
+        {
+          placeholders: [],
+          logoMedia: 'a.png',
+          logoXfrm: R,
+          logoSvgMedia: 'a.svg',
+        },
+      ],
+      slides: [{ shapes: [] }],
+    });
+    expect(assets).toHaveLength(1);
+    expect(assets[0]).toMatchObject({
+      id: 'ppt/media/a.svg',
+      origin: 'layout',
+      fallbackPngPath: 'ppt/media/a.png',
+      fileName: 'demo-uklad-01.svg',
+    });
+  });
+
+  it('sorts unused media naturally', async () => {
+    const media: Record<string, Uint8Array> = {};
+    for (const n of [10, 2, 1]) {
+      media[`image${n}.png`] = tinyPng(2, 2, n);
+    }
+    const assets = await inventory({ media, slides: [{ shapes: [] }] });
+    expect(assets.map((a) => a.id)).toEqual([
+      'ppt/media/image1.png',
+      'ppt/media/image2.png',
+      'ppt/media/image10.png',
+    ]);
+  });
+
+  it('never slices much of a large stored image', async () => {
+    const big = new Uint8Array(2_000_000);
+    big.set(tinyPng(8, 8, 1));
+    const deck = buildPptx({
+      media: { 'big.png': big },
+      slides: [{ shapes: [pic('big.png')] }],
+    });
+    const spy = spyBlob(new Blob([deck.slice()]));
+    const zip = await openZip(spy.blob);
+    const pres = await parsePresentation(zip);
+    const assets = await buildImageInventory(zip, pres, 'Demo.pptx');
+    expect(assets[0]).toMatchObject({
+      width: 8,
+      height: 8,
+      byteSize: 2_000_000,
+    });
+    expect(spy.maxSliceBytes()).toBeLessThan(300_000);
   });
 });
 

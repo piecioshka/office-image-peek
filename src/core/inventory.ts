@@ -2,6 +2,7 @@
 import { readImageSize, type ImageFormat } from './image-size';
 import { readRelationships, relTypeIs, type Relationship } from './opc';
 import type { Presentation, Slide } from './types';
+import { NS, attr, descendants, parseXml } from './xml';
 import type { ZipArchive } from './zip/zip-reader';
 
 export interface ImageAsset {
@@ -33,6 +34,7 @@ interface Usage {
   slides: Set<number>;
 }
 
+const HEADER_BYTES = 262_144;
 const MEDIA_PREFIX = 'ppt/media/';
 const WIDE_DECK = 100;
 const NARROW_PAD = 2;
@@ -100,47 +102,94 @@ function imageRefs(rels: Map<string, Relationship>): Ref[] {
     .map((rel) => ({ id: rel.target, external: rel.external }));
 }
 
-/** Fallback PNG path -> its SVG path, from pictures carrying both. */
-function fallbackPairs(pres: Presentation): Map<string, string> {
-  const pairs = new Map<string, string>();
-  for (const slide of pres.slides) {
-    for (const shape of slide.shapes) {
-      if (
-        shape.kind === 'picture' &&
-        shape.svgPath !== null &&
-        shape.mediaPath !== null
-      ) {
-        pairs.set(shape.mediaPath, shape.svgPath);
-      }
-    }
-  }
-  return pairs;
+interface PartInfo {
+  rels: Map<string, Relationship>;
+  /** Fallback PNG path -> SVG paths it backs, within this part. */
+  pairs: Map<string, Set<string>>;
+  /** Image ids with a non-zero crop in this part. */
+  cropped: Set<string>;
 }
 
-function croppedIds(pres: Presentation): Set<string> {
-  const ids = new Set<string>();
-  for (const slide of pres.slides) {
-    for (const shape of slide.shapes) {
-      const key =
-        shape.kind === 'picture' ? (shape.svgPath ?? shape.mediaPath) : null;
-      const { crop } = shape.kind === 'picture' ? shape : { crop: null };
-      if (
-        key !== null &&
-        crop !== null &&
-        Object.values(crop).some((v) => v > 0)
-      ) {
-        ids.add(key);
-      }
-    }
-  }
-  return ids;
+interface Analysis {
+  infos: Map<string, PartInfo>;
+  /** SVG path -> its fallback PNG path, from any part. */
+  fallbackOf: Map<string, string>;
+  cropped: Set<string>;
 }
 
-function withoutFallbacks(refs: Ref[], pairs: Map<string, string>): Ref[] {
+function targetOf(rels: Map<string, Relationship>, id: string | undefined) {
+  const rel = rels.get(id ?? '');
+  return rel && !rel.external ? rel.target : null;
+}
+
+function isCropped(blip: Element): boolean {
+  const src = Array.from(blip.parentElement?.children ?? []).find(
+    (el) => el.localName === 'srcRect' && el.namespaceURI === NS.a,
+  );
+  return (
+    typeof src !== 'undefined' &&
+    Array.from(src.attributes).some((a) => Number(a.value) > 0)
+  );
+}
+
+function readBlip(blip: Element, info: PartInfo): void {
+  const png = targetOf(info.rels, attr(blip, 'embed', NS.r));
+  const svgEl = descendants(blip, NS.asvg, 'svgBlip')[0];
+  const svg = svgEl ? targetOf(info.rels, attr(svgEl, 'embed', NS.r)) : null;
+  if (svg !== null && png !== null && svg !== png) {
+    info.pairs.set(png, (info.pairs.get(png) ?? new Set()).add(svg));
+  }
+  const id = svg ?? png;
+  if (id !== null && isCropped(blip)) {
+    info.cropped.add(id);
+  }
+}
+
+async function analyzePart(zip: ZipArchive, path: string): Promise<PartInfo> {
+  const info: PartInfo = {
+    rels: await readRelationships(zip, path),
+    pairs: new Map(),
+    cropped: new Set(),
+  };
+  if (zip.has(path)) {
+    const doc = parseXml(await zip.readText(path));
+    for (const blip of descendants(doc.documentElement, NS.a, 'blip')) {
+      readBlip(blip, info);
+    }
+  }
+  return info;
+}
+
+async function analyze(zip: ZipArchive, pres: Presentation): Promise<Analysis> {
+  const paths = [
+    ...pres.slides.map((s) => s.partPath),
+    ...pres.layoutPaths,
+    ...pres.masterPaths,
+  ];
+  const analysis: Analysis = {
+    infos: new Map(),
+    fallbackOf: new Map(),
+    cropped: new Set(),
+  };
+  for (const path of paths) {
+    const info = await analyzePart(zip, path);
+    analysis.infos.set(path, info);
+    info.cropped.forEach((id) => analysis.cropped.add(id));
+    for (const [png, svgs] of info.pairs) {
+      svgs.forEach((svg) => analysis.fallbackOf.set(svg, png));
+    }
+  }
+  return analysis;
+}
+
+function withoutFallbacks(refs: Ref[], pairs: Map<string, Set<string>>): Ref[] {
   const present = new Set(refs.map((ref) => ref.id));
   return refs.filter((ref) => {
-    const svg = pairs.get(ref.id);
-    return typeof svg === 'undefined' || !present.has(svg);
+    const svgs = pairs.get(ref.id);
+    return (
+      typeof svgs === 'undefined' ||
+      !Array.from(svgs).some((svg) => present.has(svg))
+    );
   });
 }
 
@@ -157,15 +206,10 @@ function parsedSlideRefs(slide: Slide): Ref[] {
   return refs;
 }
 
-async function slideRefs(
-  zip: ZipArchive,
-  slide: Slide,
-  pairs: Map<string, string>,
-): Promise<Ref[]> {
-  const rels = await readRelationships(zip, slide.partPath);
+function slideRefs(slide: Slide, info: PartInfo): Ref[] {
   const extra = slide.extraMedia.map((id) => ({ id, external: false }));
-  const all = [...parsedSlideRefs(slide), ...extra, ...imageRefs(rels)];
-  return withoutFallbacks(all, pairs);
+  const all = [...parsedSlideRefs(slide), ...extra, ...imageRefs(info.rels)];
+  return withoutFallbacks(all, info.pairs);
 }
 
 class UsageBook {
@@ -198,40 +242,38 @@ async function masterOf(
 async function collectLayoutUsage(
   zip: ZipArchive,
   pres: Presentation,
-  pairs: Map<string, string>,
+  analysis: Analysis,
   book: UsageBook,
 ): Promise<void> {
   const masters = new Map<string, string | null>();
   for (const path of pres.layoutPaths) {
     masters.set(path, await masterOf(zip, path));
   }
-  const parts = [...pres.layoutPaths, ...pres.masterPaths];
-  for (const part of parts) {
+  for (const part of [...pres.layoutPaths, ...pres.masterPaths]) {
     const slides = pres.slides
       .filter(
         (s) =>
           s.layoutPath === part || masters.get(s.layoutPath ?? '') === part,
       )
       .map((s) => s.index);
-    const rels = await readRelationships(zip, part);
-    for (const ref of withoutFallbacks(imageRefs(rels), pairs)) {
-      book.add(ref, 'layout', slides);
-    }
+    const info = analysis.infos.get(part);
+    const refs = info ? withoutFallbacks(imageRefs(info.rels), info.pairs) : [];
+    refs.forEach((ref) => book.add(ref, 'layout', slides));
   }
 }
 
 async function collectUsage(
   zip: ZipArchive,
   pres: Presentation,
-  pairs: Map<string, string>,
+  analysis: Analysis,
 ): Promise<UsageBook> {
   const book = new UsageBook();
   for (const slide of pres.slides) {
-    for (const ref of await slideRefs(zip, slide, pairs)) {
-      book.add(ref, 'slide', [slide.index]);
-    }
+    const info = analysis.infos.get(slide.partPath);
+    const refs = info ? slideRefs(slide, info) : [];
+    refs.forEach((ref) => book.add(ref, 'slide', [slide.index]));
   }
-  await collectLayoutUsage(zip, pres, pairs, book);
+  await collectLayoutUsage(zip, pres, analysis, book);
   return book;
 }
 
@@ -249,7 +291,7 @@ async function measure(zip: ZipArchive, path: string): Promise<Measured> {
     const format = EXT_FORMATS.get(extensionOf(path)) ?? 'unknown';
     return { format, byteSize: null, width: null, height: null, missing: true };
   }
-  const info = readImageSize(await zip.readBytes(path));
+  const info = readImageSize(await zip.readPrefix(path, HEADER_BYTES));
   return { ...info, byteSize: entry.size, missing: false };
 }
 
@@ -262,20 +304,18 @@ function externalMeasure(url: string): Measured {
 function baseAsset(
   usage: Usage,
   measured: Measured,
-  pairs: Map<string, string>,
-  cropped: Set<string>,
+  analysis: Analysis,
 ): ImageAsset {
   const { ref } = usage;
-  const fallback = Array.from(pairs).find(([, svg]) => svg === ref.id);
   return {
     id: ref.id,
     archivePath: ref.external ? null : ref.id,
     externalUrl: ref.external ? ref.id : null,
-    fallbackPngPath: fallback ? fallback[0] : null,
+    fallbackPngPath: analysis.fallbackOf.get(ref.id) ?? null,
     ...measured,
     slides: Array.from(usage.slides).sort((a, b) => a - b),
     origin: usage.origin,
-    cropped: cropped.has(ref.id),
+    cropped: analysis.cropped.has(ref.id),
     fileName: '',
   };
 }
@@ -286,7 +326,7 @@ async function unusedAssets(
 ): Promise<ImageAsset[]> {
   const paths = Array.from(zip.entries.keys())
     .filter((path) => path.startsWith(MEDIA_PREFIX) && !known.has(path))
-    .sort();
+    .sort(new Intl.Collator('en', { numeric: true }).compare);
   const assets: ImageAsset[] = [];
   for (const path of paths) {
     const measured = await measure(zip, path);
@@ -357,18 +397,16 @@ export async function buildImageInventory(
   pres: Presentation,
   deckFileName: string,
 ): Promise<ImageAsset[]> {
-  const pairs = fallbackPairs(pres);
-  const cropped = croppedIds(pres);
-  const book = await collectUsage(zip, pres, pairs);
+  const analysis = await analyze(zip, pres);
+  const book = await collectUsage(zip, pres, analysis);
   const usages = Array.from(book.usages.values());
-  const listed = await Promise.all(
-    usages.map(async (usage) => {
-      const measured = usage.ref.external
-        ? externalMeasure(usage.ref.id)
-        : await measure(zip, usage.ref.id);
-      return baseAsset(usage, measured, pairs, cropped);
-    }),
-  );
+  const listed: ImageAsset[] = [];
+  for (const usage of usages) {
+    const measured = usage.ref.external
+      ? externalMeasure(usage.ref.id)
+      : await measure(zip, usage.ref.id);
+    listed.push(baseAsset(usage, measured, analysis));
+  }
   const known = new Set(listed.flatMap((a) => [a.id, a.fallbackPngPath ?? '']));
   const unused = await unusedAssets(zip, known);
   const local = listed.filter((a) => a.externalUrl === null);

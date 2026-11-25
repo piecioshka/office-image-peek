@@ -46,6 +46,8 @@ export interface FixtureSlide {
 export interface FixtureLayout {
   placeholders: { type?: string; idx?: number; xfrm: Rect }[];
   logoMedia?: string;
+  /** SVG original of the logo; `logoMedia` becomes its PNG fallback. */
+  logoSvgMedia?: string;
   logoXfrm?: Rect;
   background?: { color?: string; image?: string };
 }
@@ -350,9 +352,14 @@ function logoXml(id: number, rels: Rels, layout: FixtureLayout): string {
   }
   const rId = rels.add('image', `../media/${layout.logoMedia}`);
   const xfrm = layout.logoXfrm ?? { x: 0, y: 0, cx: 457200, cy: 457200 };
+  const blip =
+    typeof layout.logoSvgMedia === 'undefined'
+      ? `<a:blip r:embed="${rId}"/>`
+      : `<a:blip r:embed="${rId}"><a:extLst><a:ext uri="{96DAC541-7B7A-43D3-8B79-37D633B846F1}">` +
+        `<asvg:svgBlip xmlns:asvg="${NS_ASVG}" r:embed="${rels.add('image', `../media/${layout.logoSvgMedia}`)}"/></a:ext></a:extLst></a:blip>`;
   return (
     `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="Logo"/><p:cNvPicPr/><p:nvPr userDrawn="1"/></p:nvPicPr>` +
-    `<p:blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>` +
+    `<p:blipFill>${blip}<a:stretch><a:fillRect/></a:stretch></p:blipFill>` +
     `<p:spPr>${xfrmXml(xfrm)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`
   );
 }

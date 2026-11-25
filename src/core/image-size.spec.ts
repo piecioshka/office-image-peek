@@ -133,4 +133,12 @@ describe('readImageSize', () => {
       height: null,
     });
   });
+
+  it('does not throw on bare TIFF magic', () => {
+    expect(readImageSize(Uint8Array.from([0x49, 0x49, 0x2a, 0x00]))).toEqual({
+      format: 'tiff',
+      width: null,
+      height: null,
+    });
+  });
 });

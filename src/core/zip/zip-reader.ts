@@ -1,5 +1,5 @@
 /* eslint-disable no-magic-numbers -- binary format field offsets */
-import { inflateSync } from 'fflate';
+import { Inflate, inflateSync } from 'fflate';
 import { ZipError, type ZipErrorCode } from './zip-error';
 
 export interface ZipEntry {
@@ -15,6 +15,8 @@ export interface ZipArchive {
   entries: ReadonlyMap<string, ZipEntry>;
   has(path: string): boolean;
   readBytes(path: string): Promise<Uint8Array>;
+  /** Reads at most the first `maxBytes` of the uncompressed entry. */
+  readPrefix(path: string, maxBytes: number): Promise<Uint8Array>;
   readText(path: string): Promise<string>;
 }
 
@@ -38,6 +40,7 @@ const FLAG_ENCRYPTED = 0x1;
 const FLAG_UTF8 = 0x800;
 const METHOD_STORED = 0;
 const METHOD_DEFLATED = 8;
+const PREFIX_CHUNK = 65_536;
 const UINT16_BYTES = 2;
 const UINT32_BYTES = 4;
 const UINT64_BYTES = 8;
@@ -279,17 +282,68 @@ function addToIndex(index: Index, parsed: Parsed): void {
   }
 }
 
-async function readEntryData(blob: Blob, entry: ZipEntry): Promise<Uint8Array> {
+async function dataStart(blob: Blob, entry: ZipEntry): Promise<number> {
   const header = await readRange(blob, entry.localHeaderOffset, LOCAL_FIXED);
   if (header.getUint32(0, true) !== SIG_LOCAL) {
     throw truncated();
   }
   const skip =
     LOCAL_FIXED + header.getUint16(26, true) + header.getUint16(28, true);
-  const start = entry.localHeaderOffset + skip;
+  return entry.localHeaderOffset + skip;
+}
+
+async function readEntryData(blob: Blob, entry: ZipEntry): Promise<Uint8Array> {
+  const start = await dataStart(blob, entry);
   const data = await readRange(blob, start, entry.compressedSize);
   const bytes = new Uint8Array(data.buffer);
   return entry.method === METHOD_STORED ? bytes : inflateSync(bytes);
+}
+
+function concat(parts: Uint8Array[], total: number): Uint8Array {
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const part of parts) {
+    out.set(part, at);
+    at += part.length;
+  }
+  return out;
+}
+
+async function inflatePrefix(
+  blob: Blob,
+  start: number,
+  entry: ZipEntry,
+  maxBytes: number,
+): Promise<Uint8Array> {
+  const parts: Uint8Array[] = [];
+  let total = 0;
+  const inflater = new Inflate((chunk) => {
+    parts.push(chunk);
+    total += chunk.length;
+  });
+  for (let offset = 0; offset < entry.compressedSize;) {
+    const length = Math.min(PREFIX_CHUNK, entry.compressedSize - offset);
+    const view = await readRange(blob, start + offset, length);
+    offset += length;
+    inflater.push(new Uint8Array(view.buffer), offset >= entry.compressedSize);
+    if (total >= maxBytes) {
+      break;
+    }
+  }
+  return concat(parts, total).subarray(0, maxBytes);
+}
+
+async function readEntryPrefix(
+  blob: Blob,
+  entry: ZipEntry,
+  maxBytes: number,
+): Promise<Uint8Array> {
+  const start = await dataStart(blob, entry);
+  if (entry.method === METHOD_STORED) {
+    const length = Math.min(maxBytes, entry.compressedSize);
+    return new Uint8Array((await readRange(blob, start, length)).buffer);
+  }
+  return inflatePrefix(blob, start, entry, maxBytes);
 }
 
 export async function openZip(blob: Blob): Promise<ZipArchive> {
@@ -298,7 +352,7 @@ export async function openZip(blob: Blob): Promise<ZipArchive> {
   const view = await readRange(blob, directory.offset, directory.size);
   const { entries, problems } = parseDirectory(view, directory.count);
 
-  const readBytes = async (path: string): Promise<Uint8Array> => {
+  const lookup = (path: string): ZipEntry => {
     const problem = problems.get(path);
     if (problem) {
       throw new ZipError(problem, `Cannot read entry: ${path}`);
@@ -307,13 +361,17 @@ export async function openZip(blob: Blob): Promise<ZipArchive> {
     if (!entry) {
       throw new Error(`No such archive entry: ${path}`);
     }
-    return readEntryData(blob, entry);
+    return entry;
   };
+  const readBytes = async (path: string): Promise<Uint8Array> =>
+    readEntryData(blob, lookup(path));
 
   return {
     entries,
     has: (path) => entries.has(path),
     readBytes,
+    readPrefix: async (path, maxBytes) =>
+      readEntryPrefix(blob, lookup(path), maxBytes),
     readText: async (path) =>
       new TextDecoder('utf-8').decode(await readBytes(path)),
   };
