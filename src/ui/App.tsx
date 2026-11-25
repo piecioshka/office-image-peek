@@ -16,10 +16,13 @@ import {
   type ShortcutActions,
 } from './hooks';
 import { useT, type MessageKey } from './i18n';
+import { SlideList } from './SlideList';
+import { SlideView } from './SlideView';
 import { ShortcutsDialog } from './ShortcutsDialog';
 import { Topbar } from './Topbar';
 import './tokens.css';
 import './app.css';
+import './slides.css';
 
 const FILE_ACCEPT =
   '.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation';
@@ -55,12 +58,24 @@ function fileNameOf(state: AppState): string {
   return state.status === 'loading' ? state.fileName : '';
 }
 
-function DeckLayout() {
+function DeckLayout({
+  deck,
+  current,
+  onSelect,
+}: {
+  deck: Deck;
+  current: number;
+  onSelect(index: number): void;
+}) {
   const t = useT();
   return (
     <div className="deck">
-      <aside className="deck-slides">{t('slidesPlaceholder')}</aside>
-      <section className="deck-view">{t('slideViewPlaceholder')}</section>
+      <aside className="deck-slides">
+        <SlideList deck={deck} current={current} onSelect={onSelect} />
+      </aside>
+      <section className="deck-view">
+        <SlideView deck={deck} current={current} />
+      </section>
       <aside className="deck-images">{t('imagesPlaceholder')}</aside>
     </div>
   );
@@ -98,12 +113,21 @@ function useDeckState() {
       };
     });
   }, []);
-  return { state, openFile, moveSlide };
+  const selectSlide = useCallback((index: number) => {
+    setState((current) => {
+      if (current.status !== 'ready') {
+        return current;
+      }
+      const count = current.deck.presentation.slides.length;
+      return { ...current, slideIndex: clampSlide(index, count) };
+    });
+  }, []);
+  return { state, openFile, moveSlide, selectSlide };
 }
 
 export function App() {
   const t = useT();
-  const { state, openFile, moveSlide } = useDeckState();
+  const { state, openFile, moveSlide, selectSlide } = useDeckState();
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -132,7 +156,13 @@ export function App() {
         onOpenShortcuts={() => setShortcutsOpen(true)}
       />
       <main className="main">
-        {state.status === 'ready' && <DeckLayout />}
+        {state.status === 'ready' && (
+          <DeckLayout
+            deck={state.deck}
+            current={state.slideIndex}
+            onSelect={selectSlide}
+          />
+        )}
         {state.status === 'loading' && (
           <p className="status" aria-busy="true">
             {t('opening')}

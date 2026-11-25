@@ -19,8 +19,14 @@ const en = {
   shortcutOpen: 'Open a file',
   shortcutSelectAll: 'Select all images',
   shortcutDownload: 'Download selected images',
-  slidesPlaceholder: 'Slides',
-  slideViewPlaceholder: 'Slide preview',
+  slides: 'Slides',
+  slideView: 'Slide preview',
+  slideLabel: 'Slide {n}',
+  hiddenSlide: 'hidden',
+  boxChart: 'Chart',
+  boxTable: 'Table',
+  boxDiagram: 'Diagram',
+  boxObject: 'Object',
   imagesPlaceholder: 'Images',
 };
 
@@ -44,8 +50,14 @@ const pl: Record<MessageKey, string> = {
   shortcutOpen: 'Otwórz plik',
   shortcutSelectAll: 'Zaznacz wszystkie obrazki',
   shortcutDownload: 'Pobierz zaznaczone obrazki',
-  slidesPlaceholder: 'Slajdy',
-  slideViewPlaceholder: 'Podgląd slajdu',
+  slides: 'Slajdy',
+  slideView: 'Podgląd slajdu',
+  slideLabel: 'Slajd {n}',
+  hiddenSlide: 'ukryty',
+  boxChart: 'Wykres',
+  boxTable: 'Tabela',
+  boxDiagram: 'Diagram',
+  boxObject: 'Obiekt',
   imagesPlaceholder: 'Obrazki',
 };
 
