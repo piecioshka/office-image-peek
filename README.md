@@ -2,6 +2,13 @@
 
 PPTX Peek opens a `.pptx` file right in your browser, shows which pictures sit on which slide and lets you download them. Nothing leaves your computer, and every image is exported byte-for-byte, exactly as it is stored in the file.
 
+<!-- prettier-ignore-start -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/main-dark.png" />
+  <img src="docs/screenshots/main-light.png" alt="PPTX Peek showing a demo deck with its slide thumbnails and exported images" />
+</picture>
+<!-- prettier-ignore-end -->
+
 ## Features
 
 - 🔒 Works fully offline in the browser, your file is never uploaded

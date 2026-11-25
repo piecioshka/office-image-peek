@@ -5,6 +5,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   reporter: 'list',
+  // Screenshots are generated on demand: npx playwright test --grep @screenshots
+  grepInvert: process.argv.includes('@screenshots') ? [] : /@screenshots/,
   use: {
     baseURL: 'http://127.0.0.1:4317',
     headless: true,
