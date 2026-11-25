@@ -131,10 +131,10 @@ const pl: Record<MessageKey, string> = {
   shortcutClosePreview: 'Zamknij podgląd obrazka',
   sortLabel: 'Sortowanie',
   sortFile: 'Jak w pliku',
-  sortBytes: 'Najcięższe najpierw',
-  sortPixels: 'Najwyższa rozdzielczość najpierw',
+  sortBytes: 'Rozmiar malejąco',
+  sortPixels: 'Rozdzielczość malejąco',
   formatLabel: 'Format',
-  formatAll: 'Wszystkie formaty',
+  formatAll: 'Wszystkie',
   zipName: '{deck}-obrazki.zip',
 };
 
