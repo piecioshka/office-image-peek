@@ -218,3 +218,18 @@
   color: var(--pal-negative-text);
   font-size: var(--pal-font-size-sm);
 }
+
+.images-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 8px;
+}
+
+.images-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  color: var(--pal-text-muted);
+  font-size: var(--pal-font-size-sm);
+}

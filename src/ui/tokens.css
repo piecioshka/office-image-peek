@@ -26,6 +26,7 @@
   --pal-button-bg: #f0f1f3;
   --pal-button-bg-hover: #e6e8eb;
   --pal-button-shadow: 0 1px 1px rgb(22 24 29 / 0.08);
+  --pal-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2316181d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   color-scheme: light;
 }
 
@@ -43,5 +44,6 @@
   --pal-button-bg: #2a2e35;
   --pal-button-bg-hover: #333841;
   --pal-button-shadow: 0 1px 1px rgb(0 0 0 / 0.4);
+  --pal-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23eceef2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   color-scheme: dark;
 }

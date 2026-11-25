@@ -122,6 +122,26 @@ body {
   opacity: 0.88;
 }
 
+.select {
+  min-width: 0;
+  min-height: var(--pal-control-height);
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--pal-control-border);
+  border-radius: var(--pal-radius);
+  background: var(--pal-button-bg) var(--pal-select-arrow) no-repeat right 10px
+    center;
+  color: var(--pal-text);
+  font: inherit;
+  font-size: var(--pal-font-size-md);
+  appearance: none;
+  cursor: pointer;
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--pal-focus);
+  outline-offset: 2px;
+}
+
 .icon-button {
   width: var(--pal-control-height);
   padding: 0;

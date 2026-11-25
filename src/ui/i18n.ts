@@ -50,6 +50,12 @@ const en = {
   goToSlide: 'Go to slide {n}',
   imageScope: 'Image scope',
   openAnother: 'Open another file',
+  sortLabel: 'Sort',
+  sortFile: 'As in the file',
+  sortBytes: 'Largest file first',
+  sortPixels: 'Highest resolution first',
+  formatLabel: 'Format',
+  formatAll: 'All formats',
   zipName: '{deck}-images.zip',
 };
 
@@ -105,6 +111,12 @@ const pl: Record<MessageKey, string> = {
   goToSlide: 'Przejdź do slajdu {n}',
   imageScope: 'Zakres obrazków',
   openAnother: 'Otwórz inny plik',
+  sortLabel: 'Sortowanie',
+  sortFile: 'Jak w pliku',
+  sortBytes: 'Najcięższe najpierw',
+  sortPixels: 'Najwyższa rozdzielczość najpierw',
+  formatLabel: 'Format',
+  formatAll: 'Wszystkie formaty',
   zipName: '{deck}-obrazki.zip',
 };
 

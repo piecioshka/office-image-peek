@@ -332,3 +332,44 @@ describe('ImagePanel selection', () => {
     expect(downloadButton(2)).toBeTruthy();
   });
 });
+
+describe('ImagePanel sorting', () => {
+  it('sorts by resolution when asked', async () => {
+    const bytes = buildPptx({
+      slides: [
+        {
+          shapes: [
+            { kind: 'picture', media: 'small.png', xfrm: RECT },
+            { kind: 'picture', media: 'big.png', xfrm: RECT },
+          ],
+        },
+      ],
+      media: { 'small.png': tinyPng(8, 8, 1), 'big.png': tinyPng(64, 48, 2) },
+    });
+    const deck = await openDeck(
+      new File([new Uint8Array(bytes)], 'sizes.pptx'),
+    );
+    render(<ImagePanel deck={deck} slideIndex={0} onGoToSlide={vi.fn()} />);
+    const metas = () =>
+      Array.from(document.querySelectorAll('.tile-meta')).map(
+        (el) => (el.textContent ?? '').split(' · ')[1],
+      );
+    expect(metas()).toEqual(['8×8', '64×48']);
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'Sort' }),
+      'pixels',
+    );
+    expect(metas()).toEqual(['64×48', '8×8']);
+  });
+
+  it('hides images of other formats', async () => {
+    const deck = await makeDeck();
+    render(<ImagePanel deck={deck} slideIndex={0} onGoToSlide={vi.fn()} />);
+    const select = screen.getByRole('combobox', { name: 'Format' });
+    expect(
+      Array.from(select.querySelectorAll('option')).map((o) => o.value),
+    ).toEqual(['all', 'png']);
+    await userEvent.selectOptions(select, 'png');
+    expect(screen.getAllByRole('listitem')).toHaveLength(deck.assets.length);
+  });
+});

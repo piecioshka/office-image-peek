@@ -9,6 +9,8 @@ import {
 } from 'react';
 import { assetsForSlide, type ImageAsset } from '../core/inventory';
 import type { Deck } from '../core/open-deck';
+import { arrange, formatsOf, type FormatFilter, type SortKey } from './arrange';
+import { ImageFilters, type ImageFiltersProps } from './ImageFilters';
 import { ImageTile, isSelectable } from './ImageTile';
 import { useT, type MessageKey } from './i18n';
 import { useDownload, type Progress } from './useDownload';
@@ -100,6 +102,25 @@ function useSelection(visible: ImageAsset[], order: ImageAsset[]) {
     });
   }, [selectable]);
   return { selected, toggle, toggleAll, selectAll, allSelected };
+}
+
+/** Sort and format filter over the scoped assets; formats come from the whole deck. */
+function useArrangement(scoped: ImageAsset[], all: ImageAsset[]) {
+  const [sort, setSort] = useState<SortKey>('file');
+  const [format, setFormat] = useState<FormatFilter>('all');
+  const formats = useMemo(() => formatsOf(all), [all]);
+  const visible = useMemo(
+    () => arrange(scoped, sort, format),
+    [scoped, sort, format],
+  );
+  const filters: ImageFiltersProps = {
+    sort,
+    onSort: setSort,
+    format,
+    formats,
+    onFormat: setFormat,
+  };
+  return { visible, filters };
 }
 
 function usePanelActions(
@@ -232,7 +253,10 @@ export function ImagePanel({
     () => assetsForSlide(deck.assets, slideNumber),
     [deck.assets, slideNumber],
   );
-  const visible = scope === 'deck' ? deck.assets : onSlide;
+  const { visible, filters } = useArrangement(
+    scope === 'deck' ? deck.assets : onSlide,
+    deck.assets,
+  );
   const order = useMemo(() => displayOrder(scope, visible), [scope, visible]);
   const { selected, toggle, toggleAll, selectAll, allSelected } = useSelection(
     visible,
@@ -268,6 +292,7 @@ export function ImagePanel({
           deckCount={deck.assets.length}
           slideCount={onSlide.length}
         />
+        <ImageFilters {...filters} />
         <DownloadControls
           allSelected={allSelected}
           onToggleAll={toggleAll}
