@@ -282,3 +282,53 @@ describe('ImagePanel', () => {
     expect(screen.getByText('missing from file')).toBeTruthy();
   });
 });
+
+function tileBoxes(): HTMLElement[] {
+  return screen
+    .getAllByRole('checkbox')
+    .filter((box) => box.closest('.tile') !== null);
+}
+
+async function shiftClick(
+  user: ReturnType<typeof userEvent.setup>,
+  target: HTMLElement,
+) {
+  await user.keyboard('{Shift>}');
+  await user.click(target);
+  await user.keyboard('{/Shift}');
+}
+
+function downloadButton(count: number): HTMLElement {
+  return screen.getByRole('button', { name: `Download selected (${count})` });
+}
+
+describe('ImagePanel selection', () => {
+  it('selects a range of tiles with Shift-click', async () => {
+    const deck = await makeDeck();
+    const user = userEvent.setup();
+    render(<ImagePanel deck={deck} slideIndex={0} onGoToSlide={vi.fn()} />);
+    const tiles = tileBoxes();
+    const [first] = tiles;
+    const last = tiles.at(-1);
+    if (!first || !last || tiles.length < 3) {
+      throw new Error('expected at least three tiles');
+    }
+    await user.click(first);
+    await shiftClick(user, last);
+    expect(downloadButton(tiles.length)).toBeTruthy();
+    await shiftClick(user, first);
+    expect(downloadButton(0)).toBeTruthy();
+  });
+
+  it('toggles only one tile on a plain click', async () => {
+    const deck = await makeDeck();
+    render(<ImagePanel deck={deck} slideIndex={0} onGoToSlide={vi.fn()} />);
+    const [first, second] = tileBoxes();
+    if (!first || !second) {
+      throw new Error('expected tiles');
+    }
+    await userEvent.click(first);
+    await userEvent.click(second);
+    expect(downloadButton(2)).toBeTruthy();
+  });
+});

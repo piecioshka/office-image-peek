@@ -44,17 +44,43 @@ const GROUPS: { key: MessageKey; match: (a: ImageAsset) => boolean }[] = [
   { key: 'groupExternal', match: (a) => a.externalUrl !== null },
 ];
 
-function useSelection(visible: ImageAsset[]) {
+/** Tiles in the order they are shown: grouped for the deck, flat for a slide. */
+function displayOrder(scope: Scope, visible: ImageAsset[]): ImageAsset[] {
+  if (scope === 'slide') {
+    return visible;
+  }
+  return GROUPS.flatMap((group) => visible.filter(group.match));
+}
+
+function rangeIds(order: ImageAsset[], from: string, to: string): string[] {
+  const start = order.findIndex((a) => a.id === from);
+  const end = order.findIndex((a) => a.id === to);
+  if (start < 0 || end < 0) {
+    return [to];
+  }
+  return order
+    .slice(Math.min(start, end), Math.max(start, end) + 1)
+    .filter(isSelectable)
+    .map((a) => a.id);
+}
+
+function useSelection(visible: ImageAsset[], order: ImageAsset[]) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const toggle = useCallback((id: string) => {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (!next.delete(id)) {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
+  const [anchor, setAnchor] = useState<string | null>(null);
+  const toggle = useCallback(
+    (id: string, range: boolean) => {
+      setSelected((current) => {
+        const next = new Set(current);
+        const turnOn = !current.has(id);
+        const ids =
+          range && anchor !== null ? rangeIds(order, anchor, id) : [id];
+        ids.forEach((each) => (turnOn ? next.add(each) : next.delete(each)));
+        return next;
+      });
+      setAnchor(id);
+    },
+    [anchor, order],
+  );
   const selectable = visible.filter(isSelectable);
   const allSelected =
     selectable.length > 0 && selectable.every((a) => selected.has(a.id));
@@ -207,8 +233,11 @@ export function ImagePanel({
     [deck.assets, slideNumber],
   );
   const visible = scope === 'deck' ? deck.assets : onSlide;
-  const { selected, toggle, toggleAll, selectAll, allSelected } =
-    useSelection(visible);
+  const order = useMemo(() => displayOrder(scope, visible), [scope, visible]);
+  const { selected, toggle, toggleAll, selectAll, allSelected } = useSelection(
+    visible,
+    order,
+  );
   const { progress, failed, run } = useDownload(deck);
   const chosen = deck.assets.filter(
     (a) => isSelectable(a) && selected.has(a.id),

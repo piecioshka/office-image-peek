@@ -10,6 +10,7 @@ const SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['Home', 'End'], label: 'shortcutEnds' },
   { keys: ['O'], label: 'shortcutOpen' },
   { keys: ['A'], label: 'shortcutSelectAll' },
+  { keys: ['Shift'], label: 'shortcutRange' },
   { keys: ['D'], label: 'shortcutDownload' },
 ];
 

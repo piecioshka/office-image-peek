@@ -12,7 +12,8 @@ export interface ImageTileProps {
   deck: Deck;
   asset: ImageAsset;
   selected: boolean;
-  onToggle(id: string): void;
+  /** `range` is true for a Shift-click, which extends the selection from the last tile. */
+  onToggle(id: string, range: boolean): void;
   onGoToSlide(slide: number): void;
 }
 
@@ -152,7 +153,10 @@ function Name({
       <input
         type="checkbox"
         checked={selected}
-        onChange={() => onToggle(asset.id)}
+        onChange={(event) => {
+          const native = event.nativeEvent;
+          onToggle(asset.id, native instanceof MouseEvent && native.shiftKey);
+        }}
       />
       <span className="tile-name" title={asset.fileName}>
         {asset.fileName}
