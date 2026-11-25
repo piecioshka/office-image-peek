@@ -1,7 +1,7 @@
 // The build replaces VERSION and PRECACHE (see vite/sw-plugin.ts).
 const VERSION = 'dev';
 const PRECACHE = [];
-const PREFIX = 'pptx-peek-';
+const PREFIX = 'office-image-peek-';
 const CACHE = PREFIX + VERSION;
 
 self.addEventListener('install', (event) => {

@@ -38,7 +38,7 @@ function expectedHash(exportName: string): string {
 
 async function openDemo(page: Page) {
   await page.goto('/');
-  await expect(page.locator('h1')).toHaveText('PPTX Peek');
+  await expect(page.locator('h1')).toHaveText('Office Image Peek');
   await page.locator('input[type="file"]').setInputFiles(DECK);
   await expect(page.locator('.tile')).toHaveCount(7);
 }
@@ -92,7 +92,7 @@ test('falls back to a ZIP whose entries match their sources', async ({
 
 test('makes no network requests after load', async ({ page, baseURL }) => {
   await page.goto('/');
-  await expect(page.locator('h1')).toHaveText('PPTX Peek');
+  await expect(page.locator('h1')).toHaveText('Office Image Peek');
   const foreign: string[] = [];
   page.on('request', (request) => {
     const url = request.url();

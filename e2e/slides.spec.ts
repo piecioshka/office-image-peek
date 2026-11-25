@@ -6,7 +6,7 @@ const DECK = 'e2e/fixtures/demo.pptx';
 async function openDemo(page: Page) {
   await page.goto('/');
   // Shortcut listeners attach in an effect, so wait for the first render.
-  await expect(page.locator('h1')).toHaveText('PPTX Peek');
+  await expect(page.locator('h1')).toHaveText('Office Image Peek');
   await page.locator('input[type="file"]').setInputFiles(DECK);
   await expect(page.locator('.slide-list li')).toHaveCount(5);
 }

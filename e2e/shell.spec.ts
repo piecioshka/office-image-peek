@@ -31,7 +31,7 @@ test('right side controls are in the agreed order', async ({ page }) => {
   );
   await expect(actions.locator('a')).toHaveAttribute(
     'href',
-    'https://github.com/piecioshka/pptx-peek',
+    'https://github.com/piecioshka/office-image-peek',
   );
 });
 
@@ -49,8 +49,8 @@ test('boot script applies the stored theme and language before render', async ({
   page,
 }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('pptx-peek:theme', 'dark');
-    localStorage.setItem('pptx-peek:lang', 'pl');
+    localStorage.setItem('office-image-peek:theme', 'dark');
+    localStorage.setItem('office-image-peek:lang', 'pl');
   });
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -73,9 +73,21 @@ test('serves a manifest with file handlers and a CSP without violations', async 
     fetch('manifest.webmanifest').then((response) => response.json()),
   );
   expect(manifest.file_handlers).toHaveLength(1);
-  expect(manifest.name).toBe('PPTX Peek');
+  expect(manifest.name).toBe('Office Image Peek');
   await expect(
     page.locator('meta[http-equiv="Content-Security-Policy"]'),
   ).toHaveCount(1);
   expect(violations).toEqual([]);
+});
+
+test('keeps theme and language saved under the old app name', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('pptx-peek:theme', 'dark');
+    localStorage.setItem('pptx-peek:lang', 'pl');
+  });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pl');
 });

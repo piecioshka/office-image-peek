@@ -6,12 +6,12 @@ const DECK = 'e2e/fixtures/demo.pptx';
 for (const theme of ['light', 'dark']) {
   test(`@screenshots main view (${theme})`, async ({ page }) => {
     await page.addInitScript((value) => {
-      localStorage.setItem('pptx-peek:theme', value);
-      localStorage.setItem('pptx-peek:lang', 'en');
+      localStorage.setItem('office-image-peek:theme', value);
+      localStorage.setItem('office-image-peek:lang', 'en');
     }, theme);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
-    await expect(page.locator('h1')).toHaveText('PPTX Peek');
+    await expect(page.locator('h1')).toHaveText('Office Image Peek');
     await page.locator('input[type="file"]').setInputFiles(DECK);
     await expect(page.locator('.slide-list li')).toHaveCount(5);
     await page.keyboard.press('ArrowDown');

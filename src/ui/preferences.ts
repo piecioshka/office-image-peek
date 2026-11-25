@@ -3,8 +3,8 @@ import { useCallback, useSyncExternalStore } from 'react';
 export type Lang = 'pl' | 'en';
 export type Theme = 'light' | 'dark';
 
-const LANG_KEY = 'pptx-peek:lang';
-const THEME_KEY = 'pptx-peek:theme';
+const LANG_KEY = 'office-image-peek:lang';
+const THEME_KEY = 'office-image-peek:theme';
 const listeners = new Set<() => void>();
 
 function isLang(value: string | null): value is Lang {

@@ -30,7 +30,7 @@ describe('App shell', () => {
     render(<App />);
     const headings = screen.getAllByRole('heading', { level: 1 });
     expect(headings).toHaveLength(1);
-    expect(headings[0]?.textContent).toBe('PPTX Peek');
+    expect(headings[0]?.textContent).toBe('Office Image Peek');
   });
 
   it('toggles the theme and persists it', async () => {
@@ -39,7 +39,7 @@ describe('App shell', () => {
     await userEvent.click(screen.getByRole('button', { name: /theme|motyw/i }));
     const after = document.documentElement.dataset.theme;
     expect(after).not.toBe(before);
-    expect(localStorage.getItem('pptx-peek:theme')).toBe(after);
+    expect(localStorage.getItem('office-image-peek:theme')).toBe(after);
   });
 
   it('switches the language of the drop text', async () => {
@@ -53,7 +53,7 @@ describe('App shell', () => {
     expect(
       screen.getByText(/^Upuść plik PowerPointa, Worda albo Excela/),
     ).toBeTruthy();
-    expect(localStorage.getItem('pptx-peek:lang')).toBe('pl');
+    expect(localStorage.getItem('office-image-peek:lang')).toBe('pl');
   });
 
   it('shows the invalid file message for a non-zip file', async () => {

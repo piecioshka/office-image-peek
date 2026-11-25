@@ -14,7 +14,7 @@ export function swPlugin(): Plugin {
   let publicDir = '';
   let outDir = '';
   return {
-    name: 'pptx-peek-sw',
+    name: 'office-image-peek-sw',
     apply: 'build',
     configResolved(config) {
       publicDir = config.publicDir;

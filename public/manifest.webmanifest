@@ -1,6 +1,6 @@
 {
-  "name": "PPTX Peek",
-  "short_name": "PPTX Peek",
+  "name": "Office Image Peek",
+  "short_name": "Image Peek",
   "description": "Opens PowerPoint, Word and Excel files in the browser and exports embedded images byte-for-byte",
   "start_url": "./",
   "scope": "./",

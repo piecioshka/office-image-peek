@@ -20,7 +20,7 @@ function buildCsp(bootHash: string): string {
 /** Production only: injects the CSP meta with the hash of the inline boot script. */
 export function cspPlugin(): Plugin {
   return {
-    name: 'pptx-peek-csp',
+    name: 'office-image-peek-csp',
     apply: 'build',
     transformIndexHtml: {
       order: 'post',

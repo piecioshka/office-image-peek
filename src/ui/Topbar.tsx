@@ -2,7 +2,7 @@ import { FolderOpen, Keyboard, Moon, Sun } from 'lucide-react';
 import { useT } from './i18n';
 import { usePreferences } from './preferences';
 
-export const REPOSITORY_URL = 'https://github.com/piecioshka/pptx-peek';
+export const REPOSITORY_URL = 'https://github.com/piecioshka/office-image-peek';
 
 function GitHubIcon() {
   return (

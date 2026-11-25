@@ -1,5 +1,5 @@
 {
-  "name": "pptx-peek",
+  "name": "office-image-peek",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,9 +7,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/piecioshka/pptx-peek.git"
+    "url": "git+https://github.com/piecioshka/office-image-peek.git"
   },
-  "homepage": "https://piecioshka.github.io/pptx-peek/",
+  "homepage": "https://piecioshka.github.io/office-image-peek/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

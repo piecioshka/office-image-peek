@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { usePreferences, type Lang } from './preferences';
 
 const en = {
-  appName: 'PPTX Peek',
+  appName: 'Office Image Peek',
   dropText:
     'Drop a PowerPoint, Word or Excel file (.pptx, .docx, .xlsx) or choose one',
   chooseFile: 'Choose file',
@@ -96,7 +96,7 @@ const en = {
 export type MessageKey = keyof typeof en;
 
 const pl: Record<MessageKey, string> = {
-  appName: 'PPTX Peek',
+  appName: 'Office Image Peek',
   dropText:
     'Upuść plik PowerPointa, Worda albo Excela (.pptx, .docx, .xlsx) lub wybierz z dysku',
   chooseFile: 'Wybierz plik',

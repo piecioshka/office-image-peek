@@ -1,11 +1,11 @@
-# PPTX Peek 🔍
+# Office Image Peek 🔍
 
-PPTX Peek opens a PowerPoint, Word or Excel file right in your browser, shows which pictures sit on which slide or sheet and lets you download them. Nothing leaves your computer, and every image is exported byte-for-byte, exactly as it is stored in the file.
+Office Image Peek opens a PowerPoint, Word or Excel file right in your browser, shows which pictures sit on which slide or sheet and lets you download them. Nothing leaves your computer, and every image is exported byte-for-byte, exactly as it is stored in the file.
 
 <!-- prettier-ignore-start -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/main-dark.png" />
-  <img src="docs/screenshots/main-light.png" alt="PPTX Peek showing a demo deck with its slide thumbnails and exported images" />
+  <img src="docs/screenshots/main-light.png" alt="Office Image Peek showing a demo deck with its slide thumbnails and exported images" />
 </picture>
 <!-- prettier-ignore-end -->
 
@@ -29,7 +29,7 @@ The quality of an exported image is capped by what is stored in the file: presen
 
 ## Try it
 
-https://piecioshka.github.io/pptx-peek/
+https://piecioshka.github.io/office-image-peek/
 
 ## Contributing
 
