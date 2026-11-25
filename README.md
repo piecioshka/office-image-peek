@@ -14,7 +14,7 @@ PPTX Peek opens a `.pptx` file right in your browser, shows which pictures sit o
 - 🔒 Works fully offline in the browser, your file is never uploaded
 - 🖼️ Exports images byte-for-byte, no re-encoding
 - 🧭 Shows pictures grouped by slide, layout and unused media
-- 📦 Downloads a single image or everything as one ZIP
+- 📦 Downloads a single image, or saves every selected one straight into a folder (Chrome and Edge) or as one ZIP elsewhere
 - 🌗 Light and dark theme, Polish and English interface
 - ⌨️ Keyboard shortcuts for quick work
 

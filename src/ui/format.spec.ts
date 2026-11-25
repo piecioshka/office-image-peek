@@ -8,4 +8,10 @@ describe('formatSize', () => {
     expect(formatSize(1536)).toBe('1.5 KB');
     expect(formatSize(2.4 * 1024 * 1024)).toBe('2.4 MB');
   });
+
+  it('uses a decimal comma in Polish and a dot in English', () => {
+    expect(formatSize(2.4 * 1024 * 1024, 'pl')).toBe('2,4 MB');
+    expect(formatSize(2.4 * 1024 * 1024, 'en')).toBe('2.4 MB');
+    expect(formatSize(512, 'pl')).toBe('512 B');
+  });
 });

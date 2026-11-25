@@ -102,6 +102,37 @@ describe('SlideCanvas', () => {
     expect(image?.getAttribute('preserveAspectRatio')).toBe('none');
   });
 
+  it('draws a picture uncropped when the crop leaves nothing', () => {
+    const { deck, slide } = makeDeck([
+      {
+        kind: 'picture',
+        rect: RECT,
+        mediaPath: 'ppt/media/a.png',
+        svgPath: null,
+        externalUrl: null,
+        crop: { l: 0.6, t: 0, r: 0.5, b: 0 },
+        source: 'slide',
+      },
+    ]);
+    const { container } = render(
+      <SlideCanvas deck={deck} slide={slide} mode="full" />,
+    );
+    const image = container.querySelector('svg svg image');
+    expect(image?.getAttribute('x')).toBe('0');
+    expect(image?.getAttribute('width')).toBe('800');
+  });
+
+  it('passes a solid background color to the CSS through --slide-bg', () => {
+    const { deck, slide } = makeDeck([]);
+    slide.background = { kind: 'color', color: '#ABCDEF' };
+    const { container } = render(
+      <SlideCanvas deck={deck} slide={slide} mode="full" />,
+    );
+    const rect = container.querySelector<SVGRectElement>('.slide-background');
+    expect(rect?.style.getPropertyValue('--slide-bg')).toBe('#ABCDEF');
+    expect(rect?.hasAttribute('fill')).toBe(false);
+  });
+
   it('labels a picture that cannot be rendered with its format', () => {
     const { deck, slide } = makeDeck([
       {

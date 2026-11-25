@@ -5,6 +5,7 @@ import type { ImageAsset } from '../core/inventory';
 import type { Deck } from '../core/open-deck';
 import { formatSize } from './format';
 import { useT, type Translate } from './i18n';
+import { usePreferences, type Lang } from './preferences';
 import { useInView, useObjectUrl } from './useObjectUrl';
 
 export interface ImageTileProps {
@@ -21,13 +22,13 @@ function isSelectable(asset: ImageAsset): boolean {
   return !asset.missing && asset.archivePath !== null;
 }
 
-function metaLine(asset: ImageAsset): string {
+function metaLine(asset: ImageAsset, lang: Lang): string {
   const parts = [asset.format === 'unknown' ? '?' : asset.format.toUpperCase()];
   if (asset.width !== null && asset.height !== null) {
     parts.push(`${asset.width}×${asset.height}`);
   }
   if (asset.byteSize !== null) {
-    parts.push(formatSize(asset.byteSize));
+    parts.push(formatSize(asset.byteSize, lang));
   }
   return parts.join(' · ');
 }
@@ -168,12 +169,13 @@ export function ImageTile({
   onGoToSlide,
 }: ImageTileProps) {
   const t = useT();
+  const { lang } = usePreferences();
   return (
     <li className="tile">
       <Thumb deck={deck} asset={asset} />
       <div className="tile-body">
         <Name asset={asset} selected={selected} onToggle={onToggle} />
-        <p className="tile-meta">{metaLine(asset)}</p>
+        <p className="tile-meta">{metaLine(asset, lang)}</p>
         <Chips asset={asset} onGoToSlide={onGoToSlide} />
         <Badges asset={asset} t={t} />
         {isSelectable(asset) && <Actions deck={deck} asset={asset} />}

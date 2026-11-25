@@ -111,7 +111,7 @@
 }
 
 .slide-background {
-  fill: #ffffff;
+  fill: var(--slide-bg, #ffffff);
 }
 
 .slide-box {

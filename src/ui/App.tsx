@@ -17,6 +17,7 @@ import {
   type ShortcutActions,
 } from './hooks';
 import { useT, type MessageKey } from './i18n';
+import { useReleaseUrls } from './useObjectUrl';
 import { ImagePanel, type PanelActions } from './ImagePanel';
 import { SlideList } from './SlideList';
 import { SlideView } from './SlideView';
@@ -71,6 +72,7 @@ function DeckLayout({
   onSelect(index: number): void;
   panelRef: RefObject<PanelActions | null>;
 }) {
+  useReleaseUrls(deck);
   return (
     <div className="deck">
       <aside className="deck-slides">
@@ -182,7 +184,7 @@ export function App() {
           />
         )}
         {state.status === 'loading' && (
-          <p className="status" aria-busy="true">
+          <p className="status" role="status" aria-busy="true">
             {t('opening')}
           </p>
         )}

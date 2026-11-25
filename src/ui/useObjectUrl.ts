@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { assetBlob } from '../core/export';
 import type { ImageAsset } from '../core/inventory';
 import type { Deck } from '../core/open-deck';
+import { urlCacheFor } from './asset-urls';
 
 type Variant = 'original' | 'fallback-png';
 
@@ -18,8 +18,8 @@ export function findAsset(deck: Deck, path: string | null): ImageAsset | null {
 }
 
 /**
- * Lazily turns an asset into an object URL and revokes it on change or
- * unmount. Stays `null` while `enabled` is false or the asset is unreadable.
+ * Lazily resolves an asset to a shared object URL from the deck-scoped cache.
+ * Stays `null` while `enabled` is false or the asset is unreadable.
  */
 export function useObjectUrl(
   deck: Deck,
@@ -37,26 +37,24 @@ export function useObjectUrl(
       return noop;
     }
     let cancelled = false;
-    let created: string | null = null;
-    assetBlob(deck, asset, variant).then(
-      (blob) => {
-        if (cancelled) {
-          return;
+    urlCacheFor(deck)
+      .get(asset, variant)
+      .then((resolved) => {
+        if (!cancelled) {
+          setUrl(resolved);
         }
-        created = URL.createObjectURL(blob);
-        setUrl(created);
-      },
-      () => setUrl(null),
-    );
+      });
     return () => {
       cancelled = true;
-      if (created !== null) {
-        URL.revokeObjectURL(created);
-      }
       setUrl(null);
     };
   }, [deck, asset, variant, enabled]);
   return url;
+}
+
+/** Revokes every object URL of the deck when it is replaced or unmounted. */
+export function useReleaseUrls(deck: Deck): void {
+  useEffect(() => () => urlCacheFor(deck).dispose(), [deck]);
 }
 
 /** True once the element has been on screen; eager where observers are missing. */

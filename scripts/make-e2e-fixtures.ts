@@ -68,6 +68,7 @@ const deck = buildPptx({
       ],
     },
     {
+      background: { color: 'FDF3D7' },
       shapes: [
         { kind: 'picture', media: 'photo.jpg', xfrm: FRAME },
         { kind: 'text', text: ['A real JPEG'], bold: true, xfrm: FRAME_RIGHT },

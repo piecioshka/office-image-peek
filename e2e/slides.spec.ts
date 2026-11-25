@@ -46,6 +46,15 @@ test('slide 2 renders its pictures', async ({ page }) => {
   ).toHaveCount(3);
 });
 
+test('a solid slide background is painted with its color', async ({ page }) => {
+  await openDemo(page);
+  await page.locator('.slide-list button').nth(2).click();
+  const fill = await page
+    .locator('.slide-canvas-full .slide-background')
+    .evaluate((node) => getComputedStyle(node).fill);
+  expect(fill).toBe('rgb(253, 243, 215)');
+});
+
 for (const width of [400, 1440]) {
   test(`slide list has no horizontal scroll at ${width} px`, async ({
     page,

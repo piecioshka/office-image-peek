@@ -20,7 +20,7 @@ const BOX_KEYS: Record<'chart' | 'table' | 'diagram' | 'object', MessageKey> = {
 
 /** Sets CSS custom properties through CSSOM (allowed by the CSP, unlike style=""). */
 function cssVars(vars: Record<string, string>) {
-  return (el: HTMLElement | null) => {
+  return (el: HTMLElement | SVGElement | null) => {
     if (el) {
       Object.entries(vars).forEach(([name, value]) =>
         el.style.setProperty(name, value),
@@ -75,8 +75,17 @@ function isRenderable(asset: ImageAsset | null): asset is ImageAsset {
   );
 }
 
+const NO_CROP: Crop = { l: 0, t: 0, r: 0, b: 0 };
+
+/** A crop that removes a whole axis (or more) cannot be drawn: show it uncropped. */
+function usableCrop(crop: Crop | null): Crop {
+  return crop !== null && crop.l + crop.r < 1 && crop.t + crop.b < 1
+    ? crop
+    : NO_CROP;
+}
+
 function cropBox(rect: Rect, crop: Crop | null) {
-  const c = crop ?? { l: 0, t: 0, r: 0, b: 0 };
+  const c = usableCrop(crop);
   const width = rect.cx / (1 - c.l - c.r);
   const height = rect.cy / (1 - c.t - c.b);
   return { x: -c.l * width, y: -c.t * height, width, height };
@@ -189,12 +198,12 @@ function Background({
   const fill = background.kind === 'color' ? background.color : null;
   return (
     <rect
+      ref={cssVars(fill === null ? {} : { '--slide-bg': fill })}
       className="slide-background"
       x={0}
       y={0}
       width={cx}
       height={cy}
-      {...(fill === null ? {} : { fill })}
     />
   );
 }

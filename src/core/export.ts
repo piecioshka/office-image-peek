@@ -49,6 +49,14 @@ export async function readAssetBytes(
   return deck.zip.readBytes(path);
 }
 
+/** A Blob-compatible view of the bytes, copied only for shared buffers. */
+function blobPart(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
+  const { buffer } = bytes;
+  return buffer instanceof ArrayBuffer
+    ? new Uint8Array(buffer, bytes.byteOffset, bytes.byteLength)
+    : bytes.slice();
+}
+
 export async function assetBlob(
   deck: Deck,
   asset: ImageAsset,
@@ -56,7 +64,7 @@ export async function assetBlob(
 ): Promise<Blob> {
   const bytes = await readAssetBytes(deck, asset, variant);
   const type = variant === 'fallback-png' ? 'image/png' : MIME[asset.format];
-  return new Blob([bytes.slice()], { type });
+  return new Blob([blobPart(bytes)], { type });
 }
 
 function exportable(assets: ImageAsset[]): ImageAsset[] {
