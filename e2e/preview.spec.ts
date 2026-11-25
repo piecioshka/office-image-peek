@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- pixel and count checks */
 import { expect, test, type Page } from '@playwright/test';
 
 const DECK = 'e2e/fixtures/demo.pptx';

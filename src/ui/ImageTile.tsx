@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { assetBlob, downloadBlob, fallbackPngName } from '../core/export';
 import type { ImageAsset } from '../core/inventory';
 import type { Deck } from '../core/open-deck';
+import { CopyButton } from './CopyButton';
 import { formatSize } from './format';
 import { exifDetails, formatCoords } from './meta-format';
 import { useT, type Translate } from './i18n';
@@ -162,6 +163,7 @@ export function ImageActions({
       >
         <Download size={16} aria-hidden="true" />
       </button>
+      <CopyButton deck={deck} asset={asset} />
       {asset.fallbackPngPath !== null && (
         <button
           type="button"

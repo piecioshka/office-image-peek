@@ -19,6 +19,7 @@ PPTX Peek opens a PowerPoint file (`.pptx`, `.pptm`, `.ppsx`, `.potx` and their 
 - 📍 Warns about photos that still carry a GPS location, and shows the camera and capture time _(before you send the deck to anyone)_
 - 🧮 Sums up how much of the file the images take and what unused media costs
 - 📊 Sorts pictures by file size or resolution and filters them by format _(find what bloats the deck)_
+- 📋 Copies any picture to the clipboard as PNG, ready to paste into a chat or design tool
 - 📦 Downloads a single image, or saves every selected one straight into a folder (Chrome and Edge) or as one ZIP elsewhere
 - 🌗 Light and dark theme, Polish and English interface
 - ⌨️ Keyboard shortcuts and Shift-click range selection for quick work
