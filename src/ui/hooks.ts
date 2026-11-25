@@ -99,6 +99,10 @@ function runShortcut(key: string, actions: ShortcutActions): boolean {
     D: actions.download,
     ArrowUp: () => actions.moveSlide(-1),
     ArrowDown: () => actions.moveSlide(1),
+    ArrowLeft: () => actions.moveSlide(-1),
+    ArrowRight: () => actions.moveSlide(1),
+    PageUp: () => actions.moveSlide(-1),
+    PageDown: () => actions.moveSlide(1),
     Home: () => actions.moveSlide('first'),
     End: () => actions.moveSlide('last'),
   };

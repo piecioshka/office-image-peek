@@ -5,6 +5,8 @@ import { useT, type MessageKey } from './i18n';
 const SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['?'], label: 'shortcutHelp' },
   { keys: ['↑', '↓'], label: 'shortcutNavigate' },
+  { keys: ['←', '→'], label: 'shortcutNavigate' },
+  { keys: ['PgUp', 'PgDn'], label: 'shortcutNavigate' },
   { keys: ['Home', 'End'], label: 'shortcutEnds' },
   { keys: ['O'], label: 'shortcutOpen' },
   { keys: ['A'], label: 'shortcutSelectAll' },
@@ -65,7 +67,7 @@ export function ShortcutsDialog({
       </div>
       <dl className="shortcuts-list">
         {SHORTCUTS.map((item) => (
-          <div key={item.label} className="shortcuts-row">
+          <div key={item.keys.join()} className="shortcuts-row">
             <dt className="shortcuts-keys">
               {item.keys.map((key) => (
                 <kbd key={key} className="kbd">

@@ -181,6 +181,35 @@ describe('App shell', () => {
     expect(await screen.findByText('Show.ppsx')).toBeTruthy();
   });
 
+  it('moves between slides with horizontal arrows and page keys', async () => {
+    const { container } = render(<App />);
+    const text = (t: string) => ({
+      shapes: [{ kind: 'text' as const, text: [t] }],
+    });
+    const bytes = buildPptx({
+      slides: [text('one'), text('two'), text('three')],
+      media: {},
+    });
+    await uploadFile(
+      fileInput(container),
+      new File([new Uint8Array(bytes)], 'nav.pptx'),
+    );
+    await screen.findByText('nav.pptx');
+    const current = () =>
+      document
+        .querySelector('.slide-button[aria-current="true"] .slide-number')
+        ?.textContent?.trim();
+    expect(current()).toBe('1');
+    await userEvent.keyboard('{ArrowRight}');
+    expect(current()).toBe('2');
+    await userEvent.keyboard('{PageDown}');
+    expect(current()).toBe('3');
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(current()).toBe('2');
+    await userEvent.keyboard('{PageUp}');
+    expect(current()).toBe('1');
+  });
+
   it('opens the shortcuts dialog on ? and closes it on Escape', async () => {
     render(<App />);
     const dialog = document.querySelector('dialog');
