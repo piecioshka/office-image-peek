@@ -86,7 +86,7 @@ describe('ImagePanel', () => {
         name: `Whole deck (${deck.assets.length})`,
       }),
     ).toBeTruthy();
-    expect(screen.getAllByRole('listitem')).toHaveLength(deck.assets.length);
+    expect(document.querySelectorAll('.tile')).toHaveLength(deck.assets.length);
   });
 
   it('shows only the images of the current slide in that scope', async () => {
@@ -95,7 +95,7 @@ describe('ImagePanel', () => {
     await userEvent.click(
       screen.getByRole('button', { name: /^Current slide/ }),
     );
-    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(document.querySelectorAll('.tile')).toHaveLength(2);
     expect(
       screen.getByRole('button', { name: 'Current slide (2)' }),
     ).toBeTruthy();
@@ -370,6 +370,39 @@ describe('ImagePanel sorting', () => {
       Array.from(select.querySelectorAll('option')).map((o) => o.value),
     ).toEqual(['all', 'png']);
     await userEvent.selectOptions(select, 'png');
-    expect(screen.getAllByRole('listitem')).toHaveLength(deck.assets.length);
+    expect(document.querySelectorAll('.tile')).toHaveLength(deck.assets.length);
+  });
+});
+
+describe('ImagePanel summary', () => {
+  it('summarizes media weight in the whole-deck scope', async () => {
+    const deck = await makeDeck();
+    const onPreview = vi.fn();
+    render(
+      <ImagePanel
+        deck={deck}
+        slideIndex={0}
+        onGoToSlide={vi.fn()}
+        onPreview={onPreview}
+      />,
+    );
+    const summary = screen.getByRole('region', { name: 'Media summary' });
+    expect(within(summary).getByText(/of the file$/)).toBeTruthy();
+    expect(within(summary).getByText('Unused')).toBeTruthy();
+    const [heaviest] = within(summary).getAllByRole('button');
+    if (!heaviest) {
+      throw new Error('no largest image listed');
+    }
+    await userEvent.click(heaviest);
+    expect(onPreview).toHaveBeenCalledWith(deck.assets[0]?.id);
+  });
+
+  it('hides the summary in the current-slide scope', async () => {
+    const deck = await makeDeck();
+    render(<ImagePanel deck={deck} slideIndex={0} onGoToSlide={vi.fn()} />);
+    await userEvent.click(
+      screen.getByRole('button', { name: /^Current slide/ }),
+    );
+    expect(screen.queryByRole('region', { name: 'Media summary' })).toBe(null);
   });
 });

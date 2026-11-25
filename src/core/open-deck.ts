@@ -5,6 +5,8 @@ import { openZip, type ZipArchive } from './zip/zip-reader';
 
 export interface Deck {
   fileName: string;
+  /** Size of the opened file in bytes. */
+  fileSize: number;
   zip: ZipArchive;
   presentation: Presentation;
   assets: ImageAsset[];
@@ -15,5 +17,11 @@ export async function openDeck(file: File): Promise<Deck> {
   const zip = await openZip(file);
   const presentation = await parsePresentation(zip);
   const assets = await buildImageInventory(zip, presentation, file.name);
-  return { fileName: file.name, zip, presentation, assets };
+  return {
+    fileName: file.name,
+    fileSize: file.size,
+    zip,
+    presentation,
+    assets,
+  };
 }

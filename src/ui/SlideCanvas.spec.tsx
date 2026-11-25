@@ -39,6 +39,7 @@ function makeDeck(shapes: Shape[]): { deck: Deck; slide: Slide } {
   };
   const deck: Deck = {
     fileName: 'x.pptx',
+    fileSize: 4,
     zip: {
       entries: new Map(),
       has: () => true,

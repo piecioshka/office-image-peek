@@ -11,6 +11,7 @@ import { assetsForSlide, type ImageAsset } from '../core/inventory';
 import type { Deck } from '../core/open-deck';
 import { arrange, formatsOf, type FormatFilter, type SortKey } from './arrange';
 import { ImageFilters, type ImageFiltersProps } from './ImageFilters';
+import { MediaSummary } from './MediaSummary';
 import { ImageTile, isSelectable } from './ImageTile';
 import { useT, type MessageKey } from './i18n';
 import { useDownload, type Progress } from './useDownload';
@@ -309,6 +310,7 @@ export function ImagePanel({
           onDownload={download}
         />
       </header>
+      {scope === 'deck' && <MediaSummary deck={deck} onPreview={onPreview} />}
       <Tiles scope={scope} visible={visible} renderTile={renderTile} />
     </section>
   );

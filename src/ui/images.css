@@ -250,3 +250,63 @@
   outline: 2px solid var(--pal-focus);
   outline-offset: 2px;
 }
+
+.summary {
+  padding: 12px;
+  border: 1px solid var(--pal-border);
+  border-radius: var(--pal-radius);
+  background: var(--pal-bg-panel);
+  font-size: var(--pal-font-size-md);
+}
+
+.summary-list {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 0;
+}
+
+.summary-row {
+  display: contents;
+}
+
+.summary-row dt {
+  color: var(--pal-text-muted);
+}
+
+.summary-row dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--pal-text);
+}
+
+.summary-largest {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.summary-largest li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pal-text);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.summary-link:focus-visible {
+  outline: 2px solid var(--pal-focus);
+  outline-offset: 2px;
+}
