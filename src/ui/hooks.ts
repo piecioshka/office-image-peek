@@ -57,11 +57,26 @@ export function useLaunchQueue(onFile: (file: File) => void): void {
   }, [onFile]);
 }
 
+const NON_TEXT_INPUTS = new Set([
+  'checkbox',
+  'radio',
+  'button',
+  'submit',
+  'reset',
+  'file',
+  'range',
+  'color',
+]);
+
 function isTextField(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+  if (target instanceof HTMLInputElement) {
+    return !NON_TEXT_INPUTS.has(target.type);
+  }
   return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable ||
-      ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+    target.isContentEditable || ['TEXTAREA', 'SELECT'].includes(target.tagName)
   );
 }
 

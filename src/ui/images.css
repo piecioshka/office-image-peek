@@ -211,3 +211,10 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+
+.tile-error {
+  margin: 0;
+  flex-basis: 100%;
+  color: var(--pal-negative-text);
+  font-size: var(--pal-font-size-sm);
+}

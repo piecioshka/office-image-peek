@@ -109,4 +109,32 @@ describe('App shell', () => {
     await userEvent.keyboard('{Escape}');
     expect(dialog?.hasAttribute('open')).toBe(false);
   });
+
+  it('keeps A working while a tile checkbox has focus', async () => {
+    const { container } = render(<App />);
+    const pic = (media: string) => ({
+      kind: 'picture' as const,
+      media,
+      xfrm: { x: 0, y: 0, cx: 100, cy: 100 },
+    });
+    const bytes = buildPptx({
+      slides: [{ shapes: [pic('a.png'), pic('b.png')] }],
+      media: { 'a.png': tinyPng(4, 4, 1), 'b.png': tinyPng(5, 5, 2) },
+    });
+    await uploadFile(
+      fileInput(container),
+      new File([new Uint8Array(bytes)], 'two.pptx'),
+    );
+    const boxes = await screen.findAllByRole('checkbox', { name: /^two-/ });
+    const [first] = boxes;
+    if (!first) {
+      throw new Error('no tile checkbox');
+    }
+    await userEvent.click(first);
+    expect(document.activeElement).toBe(first);
+    await userEvent.keyboard('a');
+    expect(
+      screen.getByRole('button', { name: 'Download selected (2)' }),
+    ).toBeTruthy();
+  });
 });

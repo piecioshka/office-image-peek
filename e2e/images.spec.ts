@@ -126,3 +126,14 @@ test('a slide chip jumps to that slide', async ({ page }) => {
     /3$/,
   );
 });
+
+test('D downloads right after ticking a tile checkbox', async ({ page }) => {
+  await page.addInitScript(() => {
+    Reflect.deleteProperty(window, 'showDirectoryPicker');
+  });
+  await openDemo(page);
+  await page.getByRole('checkbox', { name: 'demo-slajd-02-01.png' }).click();
+  const pending = page.waitForEvent('download');
+  await page.keyboard.press('d');
+  expect((await pending).suggestedFilename()).toBe('demo-obrazki.zip');
+});

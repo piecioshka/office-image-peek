@@ -1,4 +1,5 @@
 import { Download } from 'lucide-react';
+import { useState } from 'react';
 import { assetBlob, downloadBlob, fallbackPngName } from '../core/export';
 import type { ImageAsset } from '../core/inventory';
 import type { Deck } from '../core/open-deck';
@@ -91,11 +92,14 @@ function Chips({
 
 function Actions({ deck, asset }: { deck: Deck; asset: ImageAsset }) {
   const t = useT();
+  const [failed, setFailed] = useState(false);
   const save = (variant: 'original' | 'fallback-png') => {
     const name =
       variant === 'original' ? asset.fileName : fallbackPngName(asset);
-    void assetBlob(deck, asset, variant).then((blob) =>
-      downloadBlob(blob, name),
+    setFailed(false);
+    assetBlob(deck, asset, variant).then(
+      (blob) => downloadBlob(blob, name),
+      () => setFailed(true),
     );
   };
   const label = t('download', { name: asset.fileName });
@@ -119,6 +123,11 @@ function Actions({ deck, asset }: { deck: Deck; asset: ImageAsset }) {
         >
           {t('downloadFallback')}
         </button>
+      )}
+      {failed && (
+        <p className="tile-error" role="alert">
+          {t('saveError')}
+        </p>
       )}
     </div>
   );
