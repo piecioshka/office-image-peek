@@ -3,10 +3,10 @@ import { usePreferences, type Lang } from './preferences';
 
 const en = {
   appName: 'PPTX Peek',
-  dropText: 'Drop a .pptx file or choose one',
+  dropText: 'Drop a PowerPoint file (.pptx, .pptm, .ppsx, .potx) or choose one',
   chooseFile: 'Choose file',
   opening: 'Opening…',
-  errorInvalid: 'This is not a valid .pptx file',
+  errorInvalid: 'This is not a valid PowerPoint file',
   errorEncrypted: 'The file is password-protected or in the old .ppt format',
   shortcuts: 'Keyboard shortcuts',
   switchLanguage: 'Switch language',
@@ -56,10 +56,11 @@ export type MessageKey = keyof typeof en;
 
 const pl: Record<MessageKey, string> = {
   appName: 'PPTX Peek',
-  dropText: 'Upuść plik .pptx albo wybierz z dysku',
+  dropText:
+    'Upuść plik PowerPointa (.pptx, .pptm, .ppsx, .potx) albo wybierz z dysku',
   chooseFile: 'Wybierz plik',
   opening: 'Otwieranie…',
-  errorInvalid: 'To nie jest prawidłowy plik .pptx',
+  errorInvalid: 'To nie jest prawidłowy plik PowerPointa',
   errorEncrypted: 'Plik jest zaszyfrowany albo w starym formacie .ppt',
   shortcuts: 'Skróty klawiaturowe',
   switchLanguage: 'Zmień język',

@@ -27,8 +27,23 @@ import './tokens.css';
 import './app.css';
 import './slides.css';
 
-const FILE_ACCEPT =
-  '.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation';
+/** Presentations, macro-enabled decks, slide shows and templates share one package layout. */
+export const POWERPOINT_TYPES: Record<string, string> = {
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+    '.pptx',
+  'application/vnd.ms-powerpoint.presentation.macroEnabled.12': '.pptm',
+  'application/vnd.openxmlformats-officedocument.presentationml.slideshow':
+    '.ppsx',
+  'application/vnd.ms-powerpoint.slideshow.macroEnabled.12': '.ppsm',
+  'application/vnd.openxmlformats-officedocument.presentationml.template':
+    '.potx',
+  'application/vnd.ms-powerpoint.template.macroEnabled.12': '.potm',
+};
+
+const FILE_ACCEPT = [
+  ...Object.values(POWERPOINT_TYPES),
+  ...Object.keys(POWERPOINT_TYPES),
+].join(',');
 
 export type AppState =
   | { status: 'empty' }

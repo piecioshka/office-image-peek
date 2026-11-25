@@ -55,9 +55,7 @@ test('boot script applies the stored theme and language before render', async ({
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.locator('html')).toHaveAttribute('lang', 'pl');
-  await expect(
-    page.getByText('Upuść plik .pptx albo wybierz z dysku'),
-  ).toBeVisible();
+  await expect(page.getByText(/^Upuść plik PowerPointa/)).toBeVisible();
 });
 
 test('serves a manifest with file handlers and a CSP without violations', async ({

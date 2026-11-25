@@ -44,13 +44,11 @@ describe('App shell', () => {
 
   it('switches the language of the drop text', async () => {
     render(<App />);
-    expect(screen.getByText('Drop a .pptx file or choose one')).toBeTruthy();
+    expect(screen.getByText(/^Drop a PowerPoint file/)).toBeTruthy();
     await userEvent.click(
       screen.getByRole('button', { name: /switch language/i }),
     );
-    expect(
-      screen.getByText('Upuść plik .pptx albo wybierz z dysku'),
-    ).toBeTruthy();
+    expect(screen.getByText(/^Upuść plik PowerPointa/)).toBeTruthy();
     expect(localStorage.getItem('pptx-peek:lang')).toBe('pl');
   });
 
@@ -59,7 +57,7 @@ describe('App shell', () => {
     const file = new File(['not a zip at all'], 'photo.jpg');
     await uploadFile(fileInput(container), file);
     expect(
-      await screen.findByText('This is not a valid .pptx file'),
+      await screen.findByText('This is not a valid PowerPoint file'),
     ).toBeTruthy();
   });
 
@@ -160,6 +158,27 @@ describe('App shell', () => {
     });
     await userEvent.click(button);
     expect(clicked).toBe(1);
+  });
+
+  it('accepts every PowerPoint package type in the file picker', () => {
+    const { container } = render(<App />);
+    const accept = fileInput(container).accept.split(',');
+    for (const ext of ['.pptx', '.pptm', '.ppsx', '.ppsm', '.potx', '.potm']) {
+      expect(accept).toContain(ext);
+    }
+  });
+
+  it('opens a slide show saved as .ppsx', async () => {
+    const { container } = render(<App />);
+    const bytes = buildPptx({
+      slides: [{ shapes: [{ kind: 'text', text: ['hi'] }] }],
+      media: {},
+    });
+    await uploadFile(
+      fileInput(container),
+      new File([new Uint8Array(bytes)], 'Show.ppsx'),
+    );
+    expect(await screen.findByText('Show.ppsx')).toBeTruthy();
   });
 
   it('opens the shortcuts dialog on ? and closes it on Escape', async () => {
