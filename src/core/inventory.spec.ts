@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 /* eslint-disable no-magic-numbers -- fixture data */
+import { NO_META } from './image-meta';
 import { describe, expect, it } from 'vitest';
 import {
   buildPptx,
@@ -16,6 +17,7 @@ import {
 } from './inventory';
 import { parsePresentation } from './parse-presentation';
 import { spyBlob } from '../../test/blob-spy';
+import { buildExif, jpegWithExif } from '../../test/fixtures/exif';
 import { openZip } from './zip/zip-reader';
 
 const R = { x: 0, y: 0, cx: 100, cy: 100 };
@@ -61,6 +63,7 @@ describe('buildImageInventory', () => {
       height: 3,
       missing: false,
       cropped: false,
+      meta: NO_META,
     });
     expect(assets[0]?.byteSize).toBe(MEDIA['a.png'].length);
   });
@@ -306,5 +309,24 @@ describe('uniqueName', () => {
     expect(uniqueName('a.png', new Set())).toBe('a.png');
     expect(uniqueName('a.png', new Set(['a.png']))).toBe('a-2.png');
     expect(uniqueName('a.png', new Set(['a.png', 'a-2.png']))).toBe('a-3.png');
+  });
+});
+
+describe('buildImageInventory metadata', () => {
+  it('reads the EXIF location of a photo', async () => {
+    const photo = jpegWithExif(
+      tinyJpeg(8, 8),
+      buildExif({
+        model: 'Pixel 8',
+        gps: { lat: [50, 3, 0], latRef: 'N', lon: [19, 56, 0], lonRef: 'E' },
+      }),
+    );
+    const [asset] = await inventory({
+      slides: [{ shapes: [pic('photo.jpg')] }],
+      media: { 'photo.jpg': photo },
+    });
+    expect(asset?.meta.gps?.lat).toBeCloseTo(50.05, 2);
+    expect(asset?.meta.camera).toBe('Pixel 8');
+    expect(asset?.width).toBe(8);
   });
 });

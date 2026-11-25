@@ -1,4 +1,5 @@
 /* eslint-disable no-magic-numbers -- fixture sizes */
+import { NO_META } from '../core/image-meta';
 import { describe, expect, it } from 'vitest';
 import type { ImageAsset } from '../core/inventory';
 import { arrange, formatsOf } from './arrange';
@@ -21,6 +22,7 @@ function asset(
     slides: [1],
     origin: 'slide',
     cropped: false,
+    meta: NO_META,
     missing: false,
     fileName: id,
   };

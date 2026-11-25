@@ -1,11 +1,43 @@
+/* eslint-disable no-magic-numbers -- empty list check */
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import type { ImageAsset } from '../core/inventory';
 import type { Deck } from '../core/open-deck';
 import { ImageActions, metaLine } from './ImageTile';
-import { useT } from './i18n';
+import { useT, type Translate } from './i18n';
 import { usePreferences } from './preferences';
 import { useObjectUrl } from './useObjectUrl';
+import { formatCoords } from './meta-format';
+import type { ImageMeta } from '../core/image-meta';
+
+function MetaDetails({ meta, t }: { meta: ImageMeta; t: Translate }) {
+  const rows: [string, string, boolean][] = [];
+  if (meta.gps !== null) {
+    rows.push([t('metaLocation'), formatCoords(meta.gps), true]);
+  }
+  if (meta.camera !== null) {
+    rows.push([t('metaCamera'), meta.camera, false]);
+  }
+  if (meta.taken !== null) {
+    rows.push([t('metaTaken'), meta.taken, false]);
+  }
+  if (rows.length === 0) {
+    return null;
+  }
+  return (
+    <dl className="preview-details">
+      {rows.map(([label, value, warn]) => (
+        <div
+          key={label}
+          className={warn ? 'preview-detail preview-warning' : 'preview-detail'}
+        >
+          <dt>{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
 
 export interface ImagePreviewProps {
   deck: Deck;
@@ -45,6 +77,7 @@ export function ImagePreview({ deck, asset, onClose }: ImagePreviewProps) {
         </button>
         <ImageActions deck={deck} asset={asset} />
       </div>
+      <MetaDetails meta={asset.meta} t={t} />
       <div
         className={actual ? 'preview-stage preview-actual' : 'preview-stage'}
       >

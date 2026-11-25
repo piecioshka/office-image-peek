@@ -8,6 +8,8 @@ export interface MediaSummary {
   share: number;
   unusedCount: number;
   unusedBytes: number;
+  /** Images that carry a GPS position in their EXIF data. */
+  located: ImageAsset[];
   largest: ImageAsset[];
 }
 
@@ -31,6 +33,7 @@ export function summarizeMedia(
     share: fileSize > 0 ? Math.min(1, totalBytes / fileSize) : 0,
     unusedCount: unused.length,
     unusedBytes: bytesOf(unused),
+    located: stored.filter((a) => a.meta.gps !== null),
     largest: [...stored]
       .sort((a, b) => (b.byteSize ?? 0) - (a.byteSize ?? 0))
       .slice(0, LARGEST),

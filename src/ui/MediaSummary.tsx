@@ -41,6 +41,27 @@ export function MediaSummary({ deck, onPreview }: MediaSummaryProps) {
             </dd>
           </div>
         )}
+        {summary.located.length > 0 && (
+          <div className="summary-row summary-warning">
+            <dt>{t('summaryLocated')}</dt>
+            <dd>
+              <ol className="summary-largest">
+                {summary.located.map((asset) => (
+                  <li key={asset.id}>
+                    <button
+                      type="button"
+                      className="summary-link"
+                      title={t('preview', { name: asset.fileName })}
+                      onClick={() => onPreview(asset.id)}
+                    >
+                      {asset.fileName}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </dd>
+          </div>
+        )}
         <div className="summary-row">
           <dt>{t('summaryLargest')}</dt>
           <dd>

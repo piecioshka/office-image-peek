@@ -3,7 +3,8 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildPptx, tinyPng } from '../../test/fixtures/build-pptx';
+import { buildPptx, tinyJpeg, tinyPng } from '../../test/fixtures/build-pptx';
+import { buildExif, jpegWithExif } from '../../test/fixtures/exif';
 import { downloadBlob } from '../core/export';
 import { openDeck, type Deck } from '../core/open-deck';
 import { ImagePanel } from './ImagePanel';
@@ -404,5 +405,51 @@ describe('ImagePanel summary', () => {
       screen.getByRole('button', { name: /^Current slide/ }),
     );
     expect(screen.queryByRole('region', { name: 'Media summary' })).toBe(null);
+  });
+});
+
+describe('ImagePanel metadata', () => {
+  async function photoDeck(): Promise<Deck> {
+    const photo = jpegWithExif(
+      tinyJpeg(8, 8),
+      buildExif({
+        make: 'Apple',
+        model: 'iPhone 13',
+        gps: { lat: [52, 13, 47], latRef: 'N', lon: [21, 0, 42], lonRef: 'E' },
+      }),
+    );
+    const exifOnly = jpegWithExif(
+      tinyJpeg(8, 8),
+      buildExif({ make: 'Canon', model: 'EOS R6' }),
+    );
+    const bytes = buildPptx({
+      slides: [
+        {
+          shapes: [
+            { kind: 'picture', media: 'photo.jpg', xfrm: RECT },
+            { kind: 'picture', media: 'studio.jpg', xfrm: RECT },
+          ],
+        },
+      ],
+      media: { 'photo.jpg': photo, 'studio.jpg': exifOnly },
+    });
+    return openDeck(new File([new Uint8Array(bytes)], 'trip.pptx'));
+  }
+
+  it('flags images that carry a GPS position', async () => {
+    const deck = await photoDeck();
+    render(<ImagePanel deck={deck} slideIndex={0} onGoToSlide={vi.fn()} />);
+    const badge = screen.getByText('location');
+    expect(badge.getAttribute('title')).toMatch(/52\.2297\d, 21\.0116\d/);
+    expect(screen.getByText('EXIF').getAttribute('title')).toBe(
+      'EXIF data: Canon EOS R6',
+    );
+  });
+
+  it('lists located images in the summary', async () => {
+    const deck = await photoDeck();
+    render(<ImagePanel deck={deck} slideIndex={0} onGoToSlide={vi.fn()} />);
+    const summary = screen.getByRole('region', { name: 'Media summary' });
+    expect(within(summary).getByText('With location')).toBeTruthy();
   });
 });

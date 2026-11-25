@@ -4,6 +4,7 @@ import { assetBlob, downloadBlob, fallbackPngName } from '../core/export';
 import type { ImageAsset } from '../core/inventory';
 import type { Deck } from '../core/open-deck';
 import { formatSize } from './format';
+import { exifDetails, formatCoords } from './meta-format';
 import { useT, type Translate } from './i18n';
 import { usePreferences, type Lang } from './preferences';
 import { useInView, useObjectUrl } from './useObjectUrl';
@@ -67,9 +68,30 @@ function Thumb({
   );
 }
 
+function MetaBadge({ asset, t }: { asset: ImageAsset; t: Translate }) {
+  const { gps } = asset.meta;
+  if (gps !== null) {
+    return (
+      <span
+        className="badge badge-warning"
+        title={t('locationTitle', { coords: formatCoords(gps) })}
+      >
+        {t('badgeLocation')}
+      </span>
+    );
+  }
+  const details = exifDetails(asset.meta);
+  return details === null ? null : (
+    <span className="badge" title={t('exifTitle', { details })}>
+      EXIF
+    </span>
+  );
+}
+
 function Badges({ asset, t }: { asset: ImageAsset; t: Translate }) {
   return (
     <p className="tile-badges">
+      <MetaBadge asset={asset} t={t} />
       {asset.cropped && <span className="badge">{t('badgeCropped')}</span>}
       {asset.origin === 'layout' && (
         <span className="badge">{t('badgeLayout')}</span>

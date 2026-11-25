@@ -310,3 +310,13 @@
   outline: 2px solid var(--pal-focus);
   outline-offset: 2px;
 }
+
+.badge-warning {
+  border-color: var(--pal-negative-text);
+  color: var(--pal-negative-text);
+}
+
+.summary-warning dt,
+.summary-warning .summary-link {
+  color: var(--pal-negative-text);
+}

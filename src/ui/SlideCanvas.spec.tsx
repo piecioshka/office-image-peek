@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 /* eslint-disable no-magic-numbers -- EMU fixture geometry */
+import { NO_META } from '../core/image-meta';
 import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Deck } from '../core/open-deck';
@@ -20,6 +21,7 @@ function asset(id: string, format: ImageAsset['format']): ImageAsset {
     slides: [1],
     origin: 'slide',
     cropped: false,
+    meta: NO_META,
     missing: false,
     fileName: id.split('/').pop() ?? id,
   };

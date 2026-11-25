@@ -1,4 +1,5 @@
 /* eslint-disable no-magic-numbers -- 0/1 defaults and index arithmetic */
+import { NO_META, readImageMeta, type ImageMeta } from './image-meta';
 import { readImageSize, type ImageFormat } from './image-size';
 import { readRelationships, relTypeIs, type Relationship } from './opc';
 import type { Presentation, Slide } from './types';
@@ -20,6 +21,8 @@ export interface ImageAsset {
   cropped: boolean;
   missing: boolean;
   fileName: string;
+  /** EXIF location, camera and capture time stored in the image. */
+  meta: ImageMeta;
 }
 
 interface Ref {
@@ -279,6 +282,7 @@ async function collectUsage(
 }
 
 interface Measured {
+  meta: ImageMeta;
   format: ImageFormat;
   byteSize: number | null;
   width: number | null;
@@ -290,16 +294,32 @@ async function measure(zip: ZipArchive, path: string): Promise<Measured> {
   const entry = zip.entries.get(path);
   if (typeof entry === 'undefined') {
     const format = EXT_FORMATS.get(extensionOf(path)) ?? 'unknown';
-    return { format, byteSize: null, width: null, height: null, missing: true };
+    return {
+      format,
+      byteSize: null,
+      width: null,
+      height: null,
+      missing: true,
+      meta: NO_META,
+    };
   }
-  const info = readImageSize(await zip.readPrefix(path, HEADER_BYTES));
-  return { ...info, byteSize: entry.size, missing: false };
+  const prefix = await zip.readPrefix(path, HEADER_BYTES);
+  const info = readImageSize(prefix);
+  const meta = readImageMeta(prefix, info.format);
+  return { ...info, meta, byteSize: entry.size, missing: false };
 }
 
 function externalMeasure(url: string): Measured {
   const format =
     EXT_FORMATS.get(extensionOf(url.split(/[?#]/)[0] ?? '')) ?? 'unknown';
-  return { format, byteSize: null, width: null, height: null, missing: false };
+  return {
+    format,
+    byteSize: null,
+    width: null,
+    height: null,
+    missing: false,
+    meta: NO_META,
+  };
 }
 
 function baseAsset(
