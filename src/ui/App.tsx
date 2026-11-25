@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type RefObject,
 } from 'react';
 import { openDeck, type Deck } from '../core/open-deck';
 import { DropZone } from './DropZone';
@@ -16,6 +17,7 @@ import {
   type ShortcutActions,
 } from './hooks';
 import { useT, type MessageKey } from './i18n';
+import { ImagePanel, type PanelActions } from './ImagePanel';
 import { SlideList } from './SlideList';
 import { SlideView } from './SlideView';
 import { ShortcutsDialog } from './ShortcutsDialog';
@@ -62,12 +64,13 @@ function DeckLayout({
   deck,
   current,
   onSelect,
+  panelRef,
 }: {
   deck: Deck;
   current: number;
   onSelect(index: number): void;
+  panelRef: RefObject<PanelActions | null>;
 }) {
-  const t = useT();
   return (
     <div className="deck">
       <aside className="deck-slides">
@@ -76,7 +79,14 @@ function DeckLayout({
       <section className="deck-view">
         <SlideView deck={deck} current={current} />
       </section>
-      <aside className="deck-images">{t('imagesPlaceholder')}</aside>
+      <aside className="deck-images">
+        <ImagePanel
+          deck={deck}
+          slideIndex={current}
+          onGoToSlide={(slide) => onSelect(slide - 1)}
+          actionsRef={panelRef}
+        />
+      </aside>
     </div>
   );
 }
@@ -131,10 +141,17 @@ export function App() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<PanelActions | null>(null);
 
   const chooseFile = useCallback(() => inputRef.current?.click(), []);
   const actions: ShortcutActions = useMemo(
-    () => ({ help: () => setShortcutsOpen(true), open: chooseFile, moveSlide }),
+    () => ({
+      help: () => setShortcutsOpen(true),
+      open: chooseFile,
+      moveSlide,
+      selectAll: () => panelRef.current?.selectAll(),
+      download: () => panelRef.current?.download(),
+    }),
     [chooseFile, moveSlide],
   );
   useWindowDrop(openFile, setDragging);
@@ -161,6 +178,7 @@ export function App() {
             deck={state.deck}
             current={state.slideIndex}
             onSelect={selectSlide}
+            panelRef={panelRef}
           />
         )}
         {state.status === 'loading' && (

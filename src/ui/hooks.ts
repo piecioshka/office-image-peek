@@ -69,6 +69,8 @@ export interface ShortcutActions {
   help(): void;
   open(): void;
   moveSlide(delta: number | 'first' | 'last'): void;
+  selectAll(): void;
+  download(): void;
 }
 
 function runShortcut(key: string, actions: ShortcutActions): boolean {
@@ -76,6 +78,10 @@ function runShortcut(key: string, actions: ShortcutActions): boolean {
     '?': actions.help,
     o: actions.open,
     O: actions.open,
+    a: actions.selectAll,
+    A: actions.selectAll,
+    d: actions.download,
+    D: actions.download,
     ArrowUp: () => actions.moveSlide(-1),
     ArrowDown: () => actions.moveSlide(1),
     Home: () => actions.moveSlide('first'),

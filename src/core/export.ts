@@ -12,7 +12,7 @@ export interface DirectoryTarget {
     options: { create: boolean },
   ): Promise<{
     createWritable(): Promise<{
-      write(data: Uint8Array): Promise<void>;
+      write(data: Uint8Array<ArrayBuffer>): Promise<void>;
       close(): Promise<void>;
       abort?(): Promise<void>;
     }>;
@@ -89,7 +89,7 @@ export async function exportToDirectory(
     const handle = await dir.getFileHandle(asset.fileName, { create: true });
     const writable = await handle.createWritable();
     try {
-      await writable.write(bytes);
+      await writable.write(bytes.slice());
       await writable.close();
     } catch (error) {
       await writable.abort?.();
