@@ -320,3 +320,7 @@
 .summary-warning .summary-link {
   color: var(--pal-negative-text);
 }
+
+.chip-static {
+  cursor: default;
+}

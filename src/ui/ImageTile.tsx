@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- empty list checks */
 import { Download } from 'lucide-react';
 import { useState } from 'react';
 import { assetBlob, downloadBlob, fallbackPngName } from '../core/export';
@@ -89,12 +90,20 @@ function MetaBadge({ asset, t }: { asset: ImageAsset; t: Translate }) {
   );
 }
 
-function Badges({ asset, t }: { asset: ImageAsset; t: Translate }) {
+function Badges({
+  deck,
+  asset,
+  t,
+}: {
+  deck: Deck;
+  asset: ImageAsset;
+  t: Translate;
+}) {
   return (
     <p className="tile-badges">
       <MetaBadge asset={asset} t={t} />
       {asset.cropped && <span className="badge">{t('badgeCropped')}</span>}
-      {asset.origin === 'layout' && (
+      {asset.origin === 'layout' && deck.kind === 'pptx' && (
         <span className="badge">{t('badgeLayout')}</span>
       )}
       {asset.missing && <span className="badge">{t('badgeMissing')}</span>}
@@ -105,15 +114,47 @@ function Badges({ asset, t }: { asset: ImageAsset; t: Translate }) {
   );
 }
 
+function SheetChips({ deck, asset }: { deck: Deck; asset: ImageAsset }) {
+  const t = useT();
+  const names = asset.slides.map(
+    (n) => deck.places.find((p) => p.index === n)?.name ?? String(n),
+  );
+  if (names.length === 0) {
+    return asset.origin === 'slide' ? (
+      <p className="tile-chips">
+        <span className="chip chip-static">{t('inCells')}</span>
+      </p>
+    ) : null;
+  }
+  return (
+    <p className="tile-chips">
+      {names.map((name) => (
+        <span
+          key={name}
+          className="chip chip-static"
+          title={t('onSheet', { name })}
+        >
+          {name}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 function Chips({
+  deck,
   asset,
   onGoToSlide,
 }: {
+  deck: Deck;
   asset: ImageAsset;
   onGoToSlide(slide: number): void;
 }) {
   const t = useT();
-  if (asset.origin !== 'slide') {
+  if (deck.kind === 'xlsx' && asset.origin !== 'unused') {
+    return <SheetChips deck={deck} asset={asset} />;
+  }
+  if (deck.kind !== 'pptx' || asset.origin !== 'slide') {
     return null;
   }
   return (
@@ -229,8 +270,8 @@ export function ImageTile({
       <div className="tile-body">
         <Name asset={asset} selected={selected} onToggle={onToggle} />
         <p className="tile-meta">{metaLine(asset, lang)}</p>
-        <Chips asset={asset} onGoToSlide={onGoToSlide} />
-        <Badges asset={asset} t={t} />
+        <Chips deck={deck} asset={asset} onGoToSlide={onGoToSlide} />
+        <Badges deck={deck} asset={asset} t={t} />
         {isSelectable(asset) && <ImageActions deck={deck} asset={asset} />}
       </div>
     </li>

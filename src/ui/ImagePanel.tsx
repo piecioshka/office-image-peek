@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { assetsForSlide, type ImageAsset } from '../core/inventory';
 import type { Deck } from '../core/open-deck';
+import type { DocumentKind } from '../core/office-inventory';
 import { arrange, formatsOf, type FormatFilter, type SortKey } from './arrange';
 import { ImageFilters, type ImageFiltersProps } from './ImageFilters';
 import { MediaSummary } from './MediaSummary';
@@ -51,6 +52,15 @@ const GROUPS: { key: MessageKey; match: (a: ImageAsset) => boolean }[] = [
   },
   { key: 'groupExternal', match: (a) => a.externalUrl !== null },
 ];
+
+const GROUP_TITLES: Record<
+  DocumentKind,
+  Partial<Record<MessageKey, MessageKey>>
+> = {
+  pptx: {},
+  docx: { groupSlide: 'groupDocBody', groupLayout: 'groupHeaders' },
+  xlsx: { groupSlide: 'groupSheets', groupLayout: 'groupHeaders' },
+};
 
 /** Tiles in the order they are shown: grouped for the deck, flat for a slide. */
 function displayOrder(scope: Scope, visible: ImageAsset[]): ImageAsset[] {
@@ -219,10 +229,12 @@ function DownloadControls({
 }
 
 function Tiles({
+  kind,
   scope,
   visible,
   renderTile,
 }: {
+  kind: DocumentKind;
   scope: Scope;
   visible: ImageAsset[];
   renderTile(asset: ImageAsset): ReactNode;
@@ -238,7 +250,9 @@ function Tiles({
     const items = visible.filter(group.match);
     return items.length === 0 ? null : (
       <div key={group.key} className="tile-group">
-        <h2 className="tile-group-title">{t(group.key)}</h2>
+        <h2 className="tile-group-title">
+          {t(GROUP_TITLES[kind][group.key] ?? group.key)}
+        </h2>
         <ul className="tiles">{items.map(renderTile)}</ul>
       </div>
     );
@@ -294,12 +308,14 @@ export function ImagePanel({
   return (
     <section className="images" aria-label={t('images')}>
       <header className="images-header">
-        <Scopes
-          scope={scope}
-          onScope={setScope}
-          deckCount={deck.assets.length}
-          slideCount={onSlide.length}
-        />
+        {deck.kind === 'pptx' && (
+          <Scopes
+            scope={scope}
+            onScope={setScope}
+            deckCount={deck.assets.length}
+            slideCount={onSlide.length}
+          />
+        )}
         <ImageFilters {...filters} />
         <DownloadControls
           allSelected={allSelected}
@@ -311,7 +327,12 @@ export function ImagePanel({
         />
       </header>
       {scope === 'deck' && <MediaSummary deck={deck} onPreview={onPreview} />}
-      <Tiles scope={scope} visible={visible} renderTile={renderTile} />
+      <Tiles
+        kind={deck.kind}
+        scope={scope}
+        visible={visible}
+        renderTile={renderTile}
+      />
     </section>
   );
 }

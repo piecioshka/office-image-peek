@@ -40,8 +40,10 @@ function makeDeck(shapes: Shape[]): { deck: Deck; slide: Slide } {
     extraMedia: [],
   };
   const deck: Deck = {
+    kind: 'pptx',
     fileName: 'x.pptx',
     fileSize: 4,
+    places: [],
     zip: {
       entries: new Map(),
       has: () => true,

@@ -9,6 +9,7 @@ import {
   type RefObject,
 } from 'react';
 import { openDeck, type Deck } from '../core/open-deck';
+import { DocumentOverview } from './DocumentOverview';
 import { DropZone } from './DropZone';
 import { errorMessageKey } from './errors';
 import {
@@ -31,7 +32,7 @@ import './app.css';
 import './slides.css';
 
 /** Presentations, macro-enabled decks, slide shows and templates share one package layout. */
-export const POWERPOINT_TYPES: Record<string, string> = {
+const POWERPOINT_TYPES: Record<string, string> = {
   'application/vnd.openxmlformats-officedocument.presentationml.presentation':
     '.pptx',
   'application/vnd.ms-powerpoint.presentation.macroEnabled.12': '.pptm',
@@ -43,9 +44,24 @@ export const POWERPOINT_TYPES: Record<string, string> = {
   'application/vnd.ms-powerpoint.template.macroEnabled.12': '.potm',
 };
 
+/** Word and Excel files keep pictures the same way; macros are never run. */
+const OFFICE_TYPES: Record<string, string> = {
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+    '.docx',
+  'application/vnd.ms-word.document.macroEnabled.12': '.docm',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.template':
+    '.dotx',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+  'application/vnd.ms-excel.sheet.macroEnabled.12': '.xlsm',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.template':
+    '.xltx',
+};
+
 const FILE_ACCEPT = [
   ...Object.values(POWERPOINT_TYPES),
+  ...Object.values(OFFICE_TYPES),
   ...Object.keys(POWERPOINT_TYPES),
+  ...Object.keys(OFFICE_TYPES),
 ].join(',');
 
 export type AppState =
@@ -79,6 +95,14 @@ function fileNameOf(state: AppState): string {
   return state.status === 'loading' ? state.fileName : '';
 }
 
+function MainView({ deck, current }: { deck: Deck; current: number }) {
+  return deck.kind === 'pptx' ? (
+    <SlideView deck={deck} current={current} />
+  ) : (
+    <DocumentOverview deck={deck} />
+  );
+}
+
 interface PreviewProps {
   previewId: string | null;
   openPreview(id: string): void;
@@ -101,10 +125,12 @@ function DeckLayout({
   useReleaseUrls(deck);
   const previewed = findAsset(deck, preview.previewId);
   return (
-    <div className="deck">
-      <aside className="deck-slides">
-        <SlideList deck={deck} current={current} onSelect={onSelect} />
-      </aside>
+    <div className={deck.kind === 'pptx' ? 'deck' : 'deck deck-office'}>
+      {deck.kind === 'pptx' && (
+        <aside className="deck-slides">
+          <SlideList deck={deck} current={current} onSelect={onSelect} />
+        </aside>
+      )}
       <section className="deck-view">
         {previewed ? (
           <ImagePreview
@@ -114,7 +140,7 @@ function DeckLayout({
             onClose={preview.closePreview}
           />
         ) : (
-          <SlideView deck={deck} current={current} />
+          <MainView deck={deck} current={current} />
         )}
       </section>
       <aside className="deck-images">

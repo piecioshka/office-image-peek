@@ -44,11 +44,15 @@ describe('App shell', () => {
 
   it('switches the language of the drop text', async () => {
     render(<App />);
-    expect(screen.getByText(/^Drop a PowerPoint file/)).toBeTruthy();
+    expect(
+      screen.getByText(/^Drop a PowerPoint, Word or Excel file/),
+    ).toBeTruthy();
     await userEvent.click(
       screen.getByRole('button', { name: /switch language/i }),
     );
-    expect(screen.getByText(/^Upuść plik PowerPointa/)).toBeTruthy();
+    expect(
+      screen.getByText(/^Upuść plik PowerPointa, Worda albo Excela/),
+    ).toBeTruthy();
     expect(localStorage.getItem('pptx-peek:lang')).toBe('pl');
   });
 
@@ -57,7 +61,9 @@ describe('App shell', () => {
     const file = new File(['not a zip at all'], 'photo.jpg');
     await uploadFile(fileInput(container), file);
     expect(
-      await screen.findByText('This is not a valid PowerPoint file'),
+      await screen.findByText(
+        'This is not a valid PowerPoint, Word or Excel file',
+      ),
     ).toBeTruthy();
   });
 
@@ -68,7 +74,7 @@ describe('App shell', () => {
     await uploadFile(fileInput(container), new File([ole], 'old.ppt'));
     expect(
       await screen.findByText(
-        'The file is password-protected or in the old .ppt format',
+        'The file is password-protected or in an old format (.ppt, .doc, .xls)',
       ),
     ).toBeTruthy();
   });

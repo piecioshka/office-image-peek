@@ -25,7 +25,7 @@ export interface ImageAsset {
   meta: ImageMeta;
 }
 
-interface Ref {
+export interface Ref {
   id: string;
   external: boolean;
 }
@@ -40,7 +40,7 @@ interface Usage {
 const HEADER_BYTES = 262_144;
 const MEDIA_PREFIX = 'ppt/media/';
 const WIDE_DECK = 100;
-const NARROW_PAD = 2;
+export const NARROW_PAD = 2;
 const WIDE_PAD = 3;
 const EXT_FORMATS = new Map<string, ImageFormat>([
   ['png', 'png'],
@@ -89,13 +89,13 @@ export function assetsForSlide(
   return assets.filter((asset) => asset.slides.includes(slideIndex));
 }
 
-function extensionOf(path: string): string {
+export function extensionOf(path: string): string {
   const name = path.slice(path.lastIndexOf('/') + 1);
   const dot = name.lastIndexOf('.');
   return dot < 0 ? '' : name.slice(dot + 1).toLowerCase();
 }
 
-function pad(value: number, width: number): string {
+export function pad(value: number, width: number): string {
   return String(value).padStart(width, '0');
 }
 
@@ -105,7 +105,7 @@ function imageRefs(rels: Map<string, Relationship>): Ref[] {
     .map((rel) => ({ id: rel.target, external: rel.external }));
 }
 
-interface PartInfo {
+export interface PartInfo {
   rels: Map<string, Relationship>;
   /** Fallback PNG path -> SVG paths it backs, within this part. */
   pairs: Map<string, Set<string>>;
@@ -148,7 +148,10 @@ function readBlip(blip: Element, info: PartInfo): void {
   }
 }
 
-async function analyzePart(zip: ZipArchive, path: string): Promise<PartInfo> {
+export async function analyzePart(
+  zip: ZipArchive,
+  path: string,
+): Promise<PartInfo> {
   const info: PartInfo = {
     rels: await readRelationships(zip, path),
     pairs: new Map(),
@@ -185,7 +188,10 @@ async function analyze(zip: ZipArchive, pres: Presentation): Promise<Analysis> {
   return analysis;
 }
 
-function withoutFallbacks(refs: Ref[], pairs: Map<string, Set<string>>): Ref[] {
+export function withoutFallbacks(
+  refs: Ref[],
+  pairs: Map<string, Set<string>>,
+): Ref[] {
   const present = new Set(refs.map((ref) => ref.id));
   return refs.filter((ref) => {
     const svgs = pairs.get(ref.id);
@@ -281,7 +287,7 @@ async function collectUsage(
   return book;
 }
 
-interface Measured {
+export interface Measured {
   meta: ImageMeta;
   format: ImageFormat;
   byteSize: number | null;
@@ -290,7 +296,10 @@ interface Measured {
   missing: boolean;
 }
 
-async function measure(zip: ZipArchive, path: string): Promise<Measured> {
+export async function measure(
+  zip: ZipArchive,
+  path: string,
+): Promise<Measured> {
   const entry = zip.entries.get(path);
   if (typeof entry === 'undefined') {
     const format = EXT_FORMATS.get(extensionOf(path)) ?? 'unknown';
@@ -309,7 +318,7 @@ async function measure(zip: ZipArchive, path: string): Promise<Measured> {
   return { ...info, meta, byteSize: entry.size, missing: false };
 }
 
-function externalMeasure(url: string): Measured {
+export function externalMeasure(url: string): Measured {
   const format =
     EXT_FORMATS.get(extensionOf(url.split(/[?#]/)[0] ?? '')) ?? 'unknown';
   return {
@@ -341,12 +350,13 @@ function baseAsset(
   };
 }
 
-async function unusedAssets(
+export async function unusedAssets(
   zip: ZipArchive,
   known: Set<string>,
+  mediaPrefix = MEDIA_PREFIX,
 ): Promise<ImageAsset[]> {
   const paths = Array.from(zip.entries.keys())
-    .filter((path) => path.startsWith(MEDIA_PREFIX) && !known.has(path))
+    .filter((path) => path.startsWith(mediaPrefix) && !known.has(path))
     .sort(new Intl.Collator('en', { numeric: true }).compare);
   const assets: ImageAsset[] = [];
   for (const path of paths) {

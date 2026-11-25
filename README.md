@@ -1,6 +1,6 @@
 # PPTX Peek 🔍
 
-PPTX Peek opens a PowerPoint file (`.pptx`, `.pptm`, `.ppsx`, `.potx` and their macro variants) right in your browser, shows which pictures sit on which slide and lets you download them. Nothing leaves your computer, and every image is exported byte-for-byte, exactly as it is stored in the file.
+PPTX Peek opens a PowerPoint, Word or Excel file right in your browser, shows which pictures sit on which slide or sheet and lets you download them. Nothing leaves your computer, and every image is exported byte-for-byte, exactly as it is stored in the file.
 
 <!-- prettier-ignore-start -->
 <picture>
@@ -11,7 +11,8 @@ PPTX Peek opens a PowerPoint file (`.pptx`, `.pptm`, `.ppsx`, `.potx` and their 
 
 ## Features
 
-- 📂 Opens presentations, slide shows and templates, macros are never run
+- 📂 Opens presentations, slide shows and templates _(.pptx, .pptm, .ppsx, .potx)_, macros are never run
+- 📝 Also opens Word documents and Excel workbooks _(.docx, .xlsx and their macro and template variants)_, grouping pictures by sheet or by body and headers
 - 🔒 Works fully offline in the browser, your file is never uploaded
 - 🖼️ Exports images byte-for-byte, no re-encoding
 - 🧭 Shows pictures grouped by slide, layout and unused media

@@ -59,7 +59,7 @@ export function ImagePreview({ deck, asset, onClose }: ImagePreviewProps) {
       <div className="preview-bar">
         <button type="button" className="button" onClick={onClose}>
           <ArrowLeft size={16} aria-hidden="true" />
-          {t('backToSlide')}
+          {t(deck.kind === 'pptx' ? 'backToSlide' : 'backToOverview')}
         </button>
         <p className="preview-title">
           <span className="preview-name" title={asset.fileName}>

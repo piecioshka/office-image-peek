@@ -1,6 +1,7 @@
 /* eslint-disable no-magic-numbers -- fixture geometry in EMU */
 import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { buildDocx, buildXlsx } from '../test/fixtures/build-office.ts';
 import { buildPptx, tinyPng } from '../test/fixtures/build-pptx.ts';
 
 // A real 64x48 JPEG (magick -size 64x48 xc:#3366cc -quality 90 jpg:-).
@@ -106,3 +107,32 @@ writeFileSync(
   'e2e/fixtures/demo-sources.json',
   `${JSON.stringify(sources, null, 2)}\n`,
 );
+
+function pick(...names: string[]): Record<string, Uint8Array> {
+  const picked: Record<string, Uint8Array> = {};
+  for (const name of names) {
+    const bytes = media[name];
+    if (!bytes) {
+      throw new Error(`Unknown fixture media: ${name}`);
+    }
+    picked[name] = bytes;
+  }
+  return picked;
+}
+
+const docx = buildDocx({
+  body: ['photo.png', 'photo.jpg'],
+  header: ['logo.png'],
+  media: pick('photo.png', 'photo.jpg', 'logo.png', 'unused.png'),
+});
+writeFileSync('e2e/fixtures/demo.docx', docx);
+
+const xlsx = buildXlsx({
+  sheets: [
+    { name: 'Sales', pictures: ['photo.png'] },
+    { name: 'Team', pictures: ['photo.jpg', 'logo.png'] },
+  ],
+  inCells: ['cropped.png'],
+  media: pick('photo.png', 'photo.jpg', 'logo.png', 'cropped.png'),
+});
+writeFileSync('e2e/fixtures/demo.xlsx', xlsx);
