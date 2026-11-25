@@ -1,4 +1,4 @@
-import { Keyboard, Moon, Sun } from 'lucide-react';
+import { FolderOpen, Keyboard, Moon, Sun } from 'lucide-react';
 import { useT } from './i18n';
 import { usePreferences } from './preferences';
 
@@ -17,9 +17,11 @@ function GitHubIcon() {
 
 export function Topbar({
   fileName,
+  onOpenFile,
   onOpenShortcuts,
 }: {
   fileName: string;
+  onOpenFile: () => void;
   onOpenShortcuts: () => void;
 }) {
   const t = useT();
@@ -39,9 +41,20 @@ export function Topbar({
       </h1>
       <div className="topbar-center">
         {fileName && (
-          <span className="file-name" title={fileName}>
-            {fileName}
-          </span>
+          <>
+            <span className="file-name" title={fileName}>
+              {fileName}
+            </span>
+            <button
+              type="button"
+              className="button open-button"
+              onClick={onOpenFile}
+              title={`${t('openAnother')} (O)`}
+            >
+              <FolderOpen size={16} aria-hidden="true" />
+              <span className="open-label">{t('openAnother')}</span>
+            </button>
+          </>
         )}
       </div>
       <div className="topbar-actions">

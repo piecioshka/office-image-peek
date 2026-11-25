@@ -80,7 +80,7 @@ test('falls back to a ZIP whose entries match their sources', async ({
   const pending = page.waitForEvent('download');
   await page.keyboard.press('d');
   const download = await pending;
-  expect(download.suggestedFilename()).toBe('demo-obrazki.zip');
+  expect(download.suggestedFilename()).toBe('demo-images.zip');
   const entries = unzipSync(await readDownload(download));
   expect(Object.keys(entries).sort()).toEqual(
     Object.keys(BY_EXPORT_NAME).sort(),
@@ -135,5 +135,5 @@ test('D downloads right after ticking a tile checkbox', async ({ page }) => {
   await page.getByRole('checkbox', { name: 'demo-slajd-02-01.png' }).click();
   const pending = page.waitForEvent('download');
   await page.keyboard.press('d');
-  expect((await pending).suggestedFilename()).toBe('demo-obrazki.zip');
+  expect((await pending).suggestedFilename()).toBe('demo-images.zip');
 });

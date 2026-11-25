@@ -48,6 +48,8 @@ const en = {
   badgeExternal: 'external',
   goToSlide: 'Go to slide {n}',
   imageScope: 'Image scope',
+  openAnother: 'Open another file',
+  zipName: '{deck}-images.zip',
 };
 
 export type MessageKey = keyof typeof en;
@@ -99,6 +101,8 @@ const pl: Record<MessageKey, string> = {
   badgeExternal: 'zewnętrzny',
   goToSlide: 'Przejdź do slajdu {n}',
   imageScope: 'Zakres obrazków',
+  openAnother: 'Otwórz inny plik',
+  zipName: '{deck}-obrazki.zip',
 };
 
 export const messages: Record<Lang, Record<MessageKey, string>> = { en, pl };

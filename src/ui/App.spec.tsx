@@ -100,6 +100,68 @@ describe('App shell', () => {
     });
   });
 
+  it('clears the image selection when another file is opened', async () => {
+    const { container } = render(<App />);
+    const deckWith = (name: string) =>
+      new File(
+        [
+          new Uint8Array(
+            buildPptx({
+              slides: [
+                {
+                  shapes: [
+                    {
+                      kind: 'picture',
+                      media: 'ppt/media/image1.png',
+                      xfrm: { x: 0, y: 0, cx: 100, cy: 100 },
+                    },
+                  ],
+                },
+              ],
+              media: { 'ppt/media/image1.png': tinyPng(4, 4, 1) },
+            }),
+          ),
+        ],
+        name,
+      );
+    await uploadFile(fileInput(container), deckWith('first.pptx'));
+    const [box] = await screen.findAllByRole('checkbox', { name: /^first-/ });
+    if (!box) {
+      throw new Error('no tile checkbox');
+    }
+    await userEvent.click(box);
+    expect(
+      screen.getByRole('button', { name: 'Download selected (1)' }),
+    ).toBeTruthy();
+    await uploadFile(fileInput(container), deckWith('second.pptx'));
+    await screen.findAllByRole('checkbox', { name: /^second-/ });
+    expect(
+      screen.getByRole('button', { name: 'Download selected (0)' }),
+    ).toBeTruthy();
+  });
+
+  it('offers an open button next to the file name once a deck is open', async () => {
+    const { container } = render(<App />);
+    expect(screen.queryByRole('button', { name: 'Open another file' })).toBe(
+      null,
+    );
+    const bytes = buildPptx({
+      slides: [{ shapes: [{ kind: 'text', text: ['hi'] }] }],
+      media: {},
+    });
+    const input = fileInput(container);
+    await uploadFile(input, new File([new Uint8Array(bytes)], 'a.pptx'));
+    const button = await screen.findByRole('button', {
+      name: 'Open another file',
+    });
+    let clicked = 0;
+    input.addEventListener('click', () => {
+      clicked += 1;
+    });
+    await userEvent.click(button);
+    expect(clicked).toBe(1);
+  });
+
   it('opens the shortcuts dialog on ? and closes it on Escape', async () => {
     render(<App />);
     const dialog = document.querySelector('dialog');

@@ -173,7 +173,27 @@ describe('ImagePanel', () => {
       screen.getByRole('button', { name: /^Download selected/ }),
     );
     await waitFor(() => expect(downloadBlob).toHaveBeenCalledTimes(1));
-    expect(vi.mocked(downloadBlob).mock.calls[0]?.[1]).toBe('demo-obrazki.zip');
+    expect(vi.mocked(downloadBlob).mock.calls[0]?.[1]).toBe('demo-images.zip');
+  });
+
+  it('names the ZIP in the interface language', async () => {
+    document.documentElement.lang = 'pl';
+    try {
+      const deck = await makeDeck();
+      render(<ImagePanel deck={deck} slideIndex={0} onGoToSlide={vi.fn()} />);
+      await userEvent.click(
+        screen.getByRole('checkbox', { name: 'Zaznacz wszystkie' }),
+      );
+      await userEvent.click(
+        screen.getByRole('button', { name: /^Pobierz zaznaczone/ }),
+      );
+      await waitFor(() => expect(downloadBlob).toHaveBeenCalledTimes(1));
+      expect(vi.mocked(downloadBlob).mock.calls[0]?.[1]).toBe(
+        'demo-obrazki.zip',
+      );
+    } finally {
+      document.documentElement.removeAttribute('lang');
+    }
   });
 
   it('shows a busy label with an ellipsis while writing', async () => {

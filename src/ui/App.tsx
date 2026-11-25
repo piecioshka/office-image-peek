@@ -172,6 +172,7 @@ export function App() {
     <div className={dragging ? 'app app-dragging' : 'app'}>
       <Topbar
         fileName={fileNameOf(state)}
+        onOpenFile={chooseFile}
         onOpenShortcuts={() => setShortcutsOpen(true)}
       />
       <main className="main">
