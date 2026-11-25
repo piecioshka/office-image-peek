@@ -1,4 +1,3 @@
-/* eslint-disable no-magic-numbers -- counter increment */
 import { zipSync } from 'fflate';
 import type { ImageFormat } from './image-size';
 import type { ImageAsset } from './inventory';
@@ -15,6 +14,7 @@ export interface DirectoryTarget {
     createWritable(): Promise<{
       write(data: Uint8Array): Promise<void>;
       close(): Promise<void>;
+      abort?(): Promise<void>;
     }>;
   }>;
 }
@@ -88,9 +88,14 @@ export async function exportToDirectory(
     const bytes = await readAssetBytes(deck, asset, 'original');
     const handle = await dir.getFileHandle(asset.fileName, { create: true });
     const writable = await handle.createWritable();
-    await writable.write(bytes);
-    await writable.close();
-    written += 1;
+    try {
+      await writable.write(bytes);
+      await writable.close();
+    } catch (error) {
+      await writable.abort?.();
+      throw error;
+    }
+    written++;
     onProgress?.(written, list.length);
   }
   return { written, skipped: assets.length - list.length };

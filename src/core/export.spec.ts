@@ -16,6 +16,7 @@ import {
   readAssetBytes,
   type DirectoryTarget,
 } from './export';
+import type { ImageAsset } from './inventory';
 import { openDeck } from './open-deck';
 
 const PNG = tinyPng(4, 3, 1);
@@ -58,6 +59,21 @@ function firstCentralMethod(bytes: Uint8Array): number {
     (_, i) => view.getUint32(i, true) === 0x02014b50,
   );
   return view.getUint16(central + 10, true);
+}
+
+async function expectJpegAndSvg(
+  assets: ImageAsset[],
+  out: Record<string, Uint8Array>,
+): Promise<void> {
+  const png = assets.find((a) => a.id === 'ppt/media/a.png');
+  const pngEntry = png ? out[png.fileName] : null;
+  expect(pngEntry && (await sha(pngEntry))).toBe(await sha(PNG));
+  const jpeg = assets.find((a) => a.id === 'ppt/media/b.jpeg');
+  const svg = assets.find((a) => a.format === 'svg');
+  const jpegEntry = jpeg ? out[jpeg.fileName] : null;
+  const svgEntry = svg ? out[svg.fileName] : null;
+  expect(jpegEntry && (await sha(jpegEntry))).toBe(await sha(JPEG));
+  expect(svgEntry && (await sha(svgEntry))).toBe(await sha(SVG));
 }
 
 async function deck() {
@@ -112,18 +128,8 @@ describe('export', () => {
     const blob = await exportAsZip(d, d.assets);
     const bytes = new Uint8Array(await blob.arrayBuffer());
     const out = unzipSync(bytes);
-    const png = d.assets.find((a) => a.id === 'ppt/media/a.png');
-    expect(png).toBeTruthy();
-    if (!png) {
-      return;
-    }
-    const entry = out[png.fileName];
-    expect(entry).toBeTruthy();
-    if (!entry) {
-      return;
-    }
-    expect(await sha(entry)).toBe(await sha(PNG));
     expect(Object.keys(out)).toHaveLength(3);
+    await expectJpegAndSvg(d.assets, out);
     expect(firstCentralMethod(bytes)).toBe(0);
   });
 
@@ -147,6 +153,28 @@ describe('export', () => {
       return;
     }
     expect(await sha(chunks[0] ?? new Uint8Array())).toBe(await sha(PNG));
+  });
+
+  it('aborts the writable and rejects when a write fails', async () => {
+    const d = await deck();
+    let aborted = 0;
+    const dir: DirectoryTarget = {
+      getFileHandle: async () => ({
+        createWritable: async () => ({
+          write: async () => {
+            throw new Error('disk full');
+          },
+          close: async () => {},
+          abort: async () => {
+            aborted++;
+          },
+        }),
+      }),
+    };
+    await expect(exportToDirectory(d, d.assets, dir)).rejects.toThrow(
+      'disk full',
+    );
+    expect(aborted).toBe(1);
   });
 
   it('fallback png export uses the png bytes', async () => {
