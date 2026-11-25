@@ -86,6 +86,7 @@ export interface ShortcutActions {
   moveSlide(delta: number | 'first' | 'last'): void;
   selectAll(): void;
   download(): void;
+  closePreview(): void;
 }
 
 function runShortcut(key: string, actions: ShortcutActions): boolean {
@@ -105,6 +106,7 @@ function runShortcut(key: string, actions: ShortcutActions): boolean {
     PageDown: () => actions.moveSlide(1),
     Home: () => actions.moveSlide('first'),
     End: () => actions.moveSlide('last'),
+    Escape: actions.closePreview,
   };
   const action = table[key];
   action?.();

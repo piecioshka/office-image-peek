@@ -59,7 +59,7 @@ test('downloads one image byte-exact under its export name', async ({
   await openDemo(page);
   const pending = page.waitForEvent('download');
   await page
-    .getByRole('button', { name: /demo-slajd-02-01\.png$/ })
+    .getByRole('button', { name: /^Download demo-slajd-02-01\.png$/ })
     .first()
     .click();
   const download = await pending;
@@ -108,7 +108,7 @@ test('makes no network requests after load', async ({ page, baseURL }) => {
   await expect(page.locator('.tile')).toHaveCount(7);
   const pending = page.waitForEvent('download');
   await page
-    .getByRole('button', { name: /demo-slajd-02-01\.png$/ })
+    .getByRole('button', { name: /^Download demo-slajd-02-01\.png$/ })
     .first()
     .click();
   await pending;

@@ -15,6 +15,7 @@ export interface ImageTileProps {
   /** `range` is true for a Shift-click, which extends the selection from the last tile. */
   onToggle(id: string, range: boolean): void;
   onGoToSlide(slide: number): void;
+  onPreview(id: string): void;
 }
 
 const RENDERABLE = new Set(['png', 'jpeg', 'gif', 'webp', 'bmp', 'svg']);
@@ -23,7 +24,7 @@ function isSelectable(asset: ImageAsset): boolean {
   return !asset.missing && asset.archivePath !== null;
 }
 
-function metaLine(asset: ImageAsset, lang: Lang): string {
+export function metaLine(asset: ImageAsset, lang: Lang): string {
   const parts = [asset.format === 'unknown' ? '?' : asset.format.toUpperCase()];
   if (asset.width !== null && asset.height !== null) {
     parts.push(`${asset.width}×${asset.height}`);
@@ -34,7 +35,16 @@ function metaLine(asset: ImageAsset, lang: Lang): string {
   return parts.join(' · ');
 }
 
-function Thumb({ deck, asset }: { deck: Deck; asset: ImageAsset }) {
+function Thumb({
+  deck,
+  asset,
+  onPreview,
+}: {
+  deck: Deck;
+  asset: ImageAsset;
+  onPreview(id: string): void;
+}) {
+  const t = useT();
   const [watch, seen] = useInView();
   const renderable = RENDERABLE.has(asset.format) && isSelectable(asset);
   const url = useObjectUrl(deck, asset, 'original', seen && renderable);
@@ -43,7 +53,15 @@ function Thumb({ deck, asset }: { deck: Deck; asset: ImageAsset }) {
       {url === null ? (
         <span className="tile-format">{asset.format.toUpperCase()}</span>
       ) : (
-        <img className="tile-img" src={url} alt={asset.fileName} />
+        <button
+          type="button"
+          className="tile-preview"
+          aria-label={t('preview', { name: asset.fileName })}
+          title={t('preview', { name: asset.fileName })}
+          onClick={() => onPreview(asset.id)}
+        >
+          <img className="tile-img" src={url} alt="" />
+        </button>
       )}
     </div>
   );
@@ -92,7 +110,13 @@ function Chips({
   );
 }
 
-function Actions({ deck, asset }: { deck: Deck; asset: ImageAsset }) {
+export function ImageActions({
+  deck,
+  asset,
+}: {
+  deck: Deck;
+  asset: ImageAsset;
+}) {
   const t = useT();
   const [failed, setFailed] = useState(false);
   const save = (variant: 'original' | 'fallback-png') => {
@@ -171,18 +195,19 @@ export function ImageTile({
   selected,
   onToggle,
   onGoToSlide,
+  onPreview,
 }: ImageTileProps) {
   const t = useT();
   const { lang } = usePreferences();
   return (
     <li className="tile">
-      <Thumb deck={deck} asset={asset} />
+      <Thumb deck={deck} asset={asset} onPreview={onPreview} />
       <div className="tile-body">
         <Name asset={asset} selected={selected} onToggle={onToggle} />
         <p className="tile-meta">{metaLine(asset, lang)}</p>
         <Chips asset={asset} onGoToSlide={onGoToSlide} />
         <Badges asset={asset} t={t} />
-        {isSelectable(asset) && <Actions deck={deck} asset={asset} />}
+        {isSelectable(asset) && <ImageActions deck={deck} asset={asset} />}
       </div>
     </li>
   );

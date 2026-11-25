@@ -25,10 +25,15 @@ export interface ImagePanelProps {
   deck: Deck;
   slideIndex: number;
   onGoToSlide(slide: number): void;
+  onPreview?(id: string): void;
   actionsRef?: RefObject<PanelActions | null>;
 }
 
 type Scope = 'deck' | 'slide';
+
+function noPreview(): void {
+  // Panels rendered without a preview target ignore thumbnail clicks.
+}
 
 const GROUPS: { key: MessageKey; match: (a: ImageAsset) => boolean }[] = [
   {
@@ -243,6 +248,7 @@ export function ImagePanel({
   deck,
   slideIndex,
   onGoToSlide,
+  onPreview = noPreview,
   actionsRef,
 }: ImagePanelProps) {
   const t = useT();
@@ -281,6 +287,7 @@ export function ImagePanel({
       selected={selected.has(asset.id)}
       onToggle={toggle}
       onGoToSlide={onGoToSlide}
+      onPreview={onPreview}
     />
   );
   return (

@@ -1,6 +1,7 @@
 /* eslint-disable no-magic-numbers -- slide index arithmetic */
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -17,7 +18,9 @@ import {
   type ShortcutActions,
 } from './hooks';
 import { useT, type MessageKey } from './i18n';
-import { useReleaseUrls } from './useObjectUrl';
+import { ImagePreview } from './ImagePreview';
+import { findAsset, useReleaseUrls } from './useObjectUrl';
+import { usePreviewRoute } from './usePreviewRoute';
 import { ImagePanel, type PanelActions } from './ImagePanel';
 import { SlideList } from './SlideList';
 import { SlideView } from './SlideView';
@@ -76,31 +79,50 @@ function fileNameOf(state: AppState): string {
   return state.status === 'loading' ? state.fileName : '';
 }
 
+interface PreviewProps {
+  previewId: string | null;
+  openPreview(id: string): void;
+  closePreview(): void;
+}
+
 function DeckLayout({
   deck,
   current,
   onSelect,
   panelRef,
+  preview,
 }: {
   deck: Deck;
   current: number;
   onSelect(index: number): void;
   panelRef: RefObject<PanelActions | null>;
+  preview: PreviewProps;
 }) {
   useReleaseUrls(deck);
+  const previewed = findAsset(deck, preview.previewId);
   return (
     <div className="deck">
       <aside className="deck-slides">
         <SlideList deck={deck} current={current} onSelect={onSelect} />
       </aside>
       <section className="deck-view">
-        <SlideView deck={deck} current={current} />
+        {previewed ? (
+          <ImagePreview
+            key={previewed.id}
+            deck={deck}
+            asset={previewed}
+            onClose={preview.closePreview}
+          />
+        ) : (
+          <SlideView deck={deck} current={current} />
+        )}
       </section>
       <aside className="deck-images">
         <ImagePanel
           deck={deck}
           slideIndex={current}
           onGoToSlide={(slide) => onSelect(slide - 1)}
+          onPreview={preview.openPreview}
           actionsRef={panelRef}
         />
       </aside>
@@ -152,28 +174,83 @@ function useDeckState() {
   return { state, openFile, moveSlide, selectSlide };
 }
 
+/** Opening a file or moving to a slide leaves the image preview. */
+function useClosingPreview(
+  deck: ReturnType<typeof useDeckState>,
+  closePreview: () => void,
+) {
+  const { openFile, moveSlide, selectSlide } = deck;
+  return {
+    openFile: useCallback(
+      (file: File) => {
+        closePreview();
+        openFile(file);
+      },
+      [openFile, closePreview],
+    ),
+    moveSlide: useCallback(
+      (delta: number | 'first' | 'last') => {
+        closePreview();
+        moveSlide(delta);
+      },
+      [moveSlide, closePreview],
+    ),
+    selectSlide: useCallback(
+      (index: number) => {
+        closePreview();
+        selectSlide(index);
+      },
+      [selectSlide, closePreview],
+    ),
+  };
+}
+
+/** Global shortcuts; the latest callbacks are read through a ref. */
+function useAppShortcuts(input: ShortcutActions & { enabled: boolean }): void {
+  const latest = useRef(input);
+  useEffect(() => {
+    latest.current = input;
+  });
+  const actions: ShortcutActions = useMemo(
+    () => ({
+      help: () => latest.current.help(),
+      open: () => latest.current.open(),
+      moveSlide: (delta) => latest.current.moveSlide(delta),
+      selectAll: () => latest.current.selectAll(),
+      download: () => latest.current.download(),
+      closePreview: () => latest.current.closePreview(),
+    }),
+    [],
+  );
+  useShortcuts(actions, input.enabled);
+}
+
 export function App() {
   const t = useT();
-  const { state, openFile, moveSlide, selectSlide } = useDeckState();
+  const deckState = useDeckState();
+  const { state } = deckState;
+  const preview = usePreviewRoute();
+  const { openFile, moveSlide, selectSlide } = useClosingPreview(
+    deckState,
+    preview.closePreview,
+  );
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<PanelActions | null>(null);
 
   const chooseFile = useCallback(() => inputRef.current?.click(), []);
-  const actions: ShortcutActions = useMemo(
-    () => ({
-      help: () => setShortcutsOpen(true),
-      open: chooseFile,
-      moveSlide,
-      selectAll: () => panelRef.current?.selectAll(),
-      download: () => panelRef.current?.download(),
-    }),
-    [chooseFile, moveSlide],
-  );
+  useAppShortcuts({
+    help: () => setShortcutsOpen(true),
+    open: chooseFile,
+    moveSlide,
+    selectAll: () => panelRef.current?.selectAll(),
+    download: () => panelRef.current?.download(),
+    closePreview: preview.closePreview,
+    enabled: !shortcutsOpen,
+  });
   useWindowDrop(openFile, setDragging);
   useLaunchQueue(openFile);
-  useShortcuts(actions, !shortcutsOpen);
 
   const onPick = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -197,6 +274,7 @@ export function App() {
             current={state.slideIndex}
             onSelect={selectSlide}
             panelRef={panelRef}
+            preview={preview}
           />
         )}
         {state.status === 'loading' && (

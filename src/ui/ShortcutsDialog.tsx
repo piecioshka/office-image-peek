@@ -8,6 +8,7 @@ const SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['←', '→'], label: 'shortcutNavigate' },
   { keys: ['PgUp', 'PgDn'], label: 'shortcutNavigate' },
   { keys: ['Home', 'End'], label: 'shortcutEnds' },
+  { keys: ['Esc'], label: 'shortcutClosePreview' },
   { keys: ['O'], label: 'shortcutOpen' },
   { keys: ['A'], label: 'shortcutSelectAll' },
   { keys: ['Shift'], label: 'shortcutRange' },
