@@ -15,9 +15,11 @@ PPTX Peek opens a PowerPoint file (`.pptx`, `.pptm`, `.ppsx`, `.potx` and their 
 - 🔒 Works fully offline in the browser, your file is never uploaded
 - 🖼️ Exports images byte-for-byte, no re-encoding
 - 🧭 Shows pictures grouped by slide, layout and unused media
+- 🔎 Previews any picture at full size, fitted or pixel for pixel
+- 📊 Sorts pictures by file size or resolution and filters them by format _(find what bloats the deck)_
 - 📦 Downloads a single image, or saves every selected one straight into a folder (Chrome and Edge) or as one ZIP elsewhere
 - 🌗 Light and dark theme, Polish and English interface
-- ⌨️ Keyboard shortcuts for quick work
+- ⌨️ Keyboard shortcuts and Shift-click range selection for quick work
 
 The quality of an exported image is capped by what is stored in the file: presentation software compresses pictures on save by default, so the original resolution may already be gone.
 
