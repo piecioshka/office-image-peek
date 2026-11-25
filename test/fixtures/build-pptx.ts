@@ -26,7 +26,14 @@ export type FixtureShape =
       external?: string;
     }
   | { kind: 'chart'; xfrm: Rect; chartMedia?: string }
-  | { kind: 'table'; xfrm: Rect };
+  | { kind: 'table'; xfrm: Rect }
+  | {
+      /** `xfrm` is the group's off/ext, `childSpace` its chOff/chExt. */
+      kind: 'group';
+      xfrm: Rect;
+      childSpace: Rect;
+      children: FixtureShape[];
+    };
 
 export interface FixtureSlide {
   /** Zero-based index into `FixtureDeck.layouts` (default 0). */
@@ -40,6 +47,7 @@ export interface FixtureLayout {
   placeholders: { type?: string; idx?: number; xfrm: Rect }[];
   logoMedia?: string;
   logoXfrm?: Rect;
+  background?: { color?: string; image?: string };
 }
 
 export interface FixtureDeck {
@@ -48,6 +56,8 @@ export interface FixtureDeck {
   slides: FixtureSlide[];
   media?: Record<string, Uint8Array>;
   extraEntries?: Record<string, Uint8Array>;
+  /** Writes slide part files numbered in reverse relative to `p:sldIdLst`. */
+  reverseFileOrder?: boolean;
 }
 
 const NS_P = 'http://schemas.openxmlformats.org/presentationml/2006/main';
@@ -259,6 +269,23 @@ function chartXml(
   return frameXml(id, 'Chart', shape.xfrm, NS_C, data);
 }
 
+function groupXml(
+  id: number,
+  shape: Extract<FixtureShape, { kind: 'group' }>,
+  rels: Rels,
+  charts: Charts,
+): string {
+  const { xfrm: o, childSpace: c } = shape;
+  const inner = shape.children
+    .map((s, i) => shapeXml(id * 100 + i, s, rels, charts))
+    .join('');
+  return (
+    `<p:grpSp><p:nvGrpSpPr><p:cNvPr id="${id}" name="Group ${id}"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>` +
+    `<p:grpSpPr><a:xfrm><a:off x="${o.x}" y="${o.y}"/><a:ext cx="${o.cx}" cy="${o.cy}"/>` +
+    `<a:chOff x="${c.x}" y="${c.y}"/><a:chExt cx="${c.cx}" cy="${c.cy}"/></a:xfrm></p:grpSpPr>${inner}</p:grpSp>`
+  );
+}
+
 function shapeXml(
   id: number,
   shape: FixtureShape,
@@ -274,6 +301,8 @@ function shapeXml(
       return chartXml(id, rels, charts, shape);
     case 'table':
       return tableXml(id, shape);
+    case 'group':
+      return groupXml(id, shape, rels, charts);
     default:
       return '';
   }
@@ -334,8 +363,9 @@ function layoutXml(layout: FixtureLayout, rels: Rels): string {
     .map((ph, i) => placeholderSpXml(i + 2, ph))
     .join('');
   const logo = logoXml(layout.placeholders.length + 2, rels, layout);
+  const bg = backgroundXml(layout.background, rels);
   return (
-    `${XML_DECL}<p:sldLayout ${ROOT_NS} type="cust" preserve="1"><p:cSld name="Layout"><p:spTree>${SP_TREE_HEAD}${phs}${logo}</p:spTree></p:cSld>` +
+    `${XML_DECL}<p:sldLayout ${ROOT_NS} type="cust" preserve="1"><p:cSld name="Layout">${bg}<p:spTree>${SP_TREE_HEAD}${phs}${logo}</p:spTree></p:cSld>` +
     '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>'
   );
 }
@@ -369,11 +399,18 @@ function presentationXml(
   );
 }
 
-function presentationRels(slideCount: number): Rels {
+function slideFileNumber(i: number, count: number, reverse: boolean): number {
+  return reverse ? count - i : i + 1;
+}
+
+function presentationRels(slideCount: number, reverse: boolean): Rels {
   const rels = new Rels();
   rels.add('slideMaster', 'slideMasters/slideMaster1.xml');
-  for (let i = 1; i <= slideCount; i += 1) {
-    rels.add('slide', `slides/slide${i}.xml`);
+  for (let i = 0; i < slideCount; i += 1) {
+    rels.add(
+      'slide',
+      `slides/slide${slideFileNumber(i, slideCount, reverse)}.xml`,
+    );
   }
   return rels;
 }
@@ -452,16 +489,16 @@ function slideEntries(
   slides: FixtureSlide[],
   layoutCount: number,
   charts: Charts,
+  reverse: boolean,
 ): Record<string, Uint8Array> {
   const out: Record<string, Uint8Array> = {};
   slides.forEach((slide, i) => {
     const rels = new Rels();
     const layout = Math.min(slide.layout ?? 0, layoutCount - 1) + 1;
     rels.add('slideLayout', `../slideLayouts/slideLayout${layout}.xml`);
-    out[`ppt/slides/slide${i + 1}.xml`] = strToU8(
-      slideXml(slide, rels, charts),
-    );
-    out[`ppt/slides/_rels/slide${i + 1}.xml.rels`] = strToU8(rels.toXml());
+    const n = slideFileNumber(i, slides.length, reverse);
+    out[`ppt/slides/slide${n}.xml`] = strToU8(slideXml(slide, rels, charts));
+    out[`ppt/slides/_rels/slide${n}.xml.rels`] = strToU8(rels.toXml());
   });
   return out;
 }
@@ -506,7 +543,12 @@ export function buildPptx(spec: FixtureDeck): Uint8Array {
       return chartCounter;
     },
   };
-  const slides = slideEntries(spec.slides, layouts.length, charts);
+  const slides = slideEntries(
+    spec.slides,
+    layouts.length,
+    charts,
+    spec.reverseFileOrder === true,
+  );
   const files: Record<string, Uint8Array> = {
     '[Content_Types].xml': strToU8(
       contentTypesXml(spec, layouts.length, chartCounter),
@@ -516,7 +558,10 @@ export function buildPptx(spec: FixtureDeck): Uint8Array {
       presentationXml(spec.slides.length, spec.slideSize ?? DEFAULT_SIZE),
     ),
     'ppt/_rels/presentation.xml.rels': strToU8(
-      presentationRels(spec.slides.length).toXml(),
+      presentationRels(
+        spec.slides.length,
+        spec.reverseFileOrder === true,
+      ).toXml(),
     ),
     'ppt/theme/theme1.xml': strToU8(themeXml()),
     ...masterEntries(layouts.length),
